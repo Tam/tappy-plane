@@ -1,0 +1,59 @@
+[package]
+name = "tappy-plane"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+bevy_prototype_debug_lines = { version = "0.10.0", optional = true }
+
+[dependencies.bevy]
+version = "0.10.0"
+default-features = false
+features = [
+    "bevy_asset", 			# Assets management
+    "bevy_scene", 			# Scenes management
+    "bevy_gilrs", 			# Gamepad input support
+    "bevy_audio", 			# Builtin audio
+    "bevy_winit", 			# Window management
+    "x11", 					# Linux: Support X11 windowing system
+    "wayland", 				# Linux: Support Wayland windowing system
+    "animation", 			# Animation support
+
+    "bevy_render", 			# Rendering framework core
+    "bevy_core_pipeline", 	# Common rendering abstractions
+    "bevy_sprite", 			# 2D (sprites) rendering
+    "bevy_text", 			# Text/font rendering
+    "subpixel_glyph_atlas", # Subpixel antialiasing for text/fonts
+    "bevy_ui", 				# UI toolkit
+
+    "png",                  # PNG Assets
+]
+
+[features]
+debug = ["dep:bevy_prototype_debug_lines"]
+
+# Enable a small amount of optimization in debug mode
+[profile.dev]
+opt-level = 1
+
+# Enable high optimizations for dependencies (incl. Bevy), but not for our code:
+[profile.dev.package."*"]
+opt-level = 3
+
+### WASM
+
+[profile.wasm-release]
+# Use release profile as default values
+inherits = "release"
+
+# Optimize with size in mind, also try "s", sometimes it is better.
+# This doesn't increase compilation times compared to -O3, great improvements
+opt-level = "z"
+
+# Do a second optimization pass removing duplicate or unused code from dependencies.
+# Slows compile times, marginal improvements
+lto = "fat"
+
+# When building crates, optimize larger chunks at a time
+# Slows compile times, marginal improvements
+codegen-units = 1
