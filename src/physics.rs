@@ -28,9 +28,10 @@ pub struct Collider (pub Vec2);
 
 fn input (
 	mut query : Query<&mut Velocity>,
-	keyboard : Res<Input<KeyCode>>,
+	mouse : Res<Input<MouseButton>>,
+	touch : Res<Touches>,
 ) {
-	if keyboard.just_pressed(KeyCode::Space) {
+	if mouse.just_pressed(MouseButton::Left) || touch.any_just_pressed() {
 		query.single_mut().0 = 400.;
 	}
 }
