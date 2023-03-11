@@ -119,8 +119,8 @@ fn load_sprite_sheet (
 	add("planeYellow3", 330., 1225., 88., 73.);
 	add("puffLarge", 114., 1712., 42., 35.);
 	add("puffSmall", 196., 1250., 25., 21.);
-	add("rock", 114., 1400., 108., 239.);
-	add("rockDown", 324., 1489., 108., 239.);
+	add("rock", 114., 1400.4, 108. - 0.3, 239. - 0.4);
+	add("rockDown", 324., 1489., 108. - 0.4, 239.);
 	add("rockGrass", 0., 1757., 108., 239.);
 	add("rockGrassDown", 264., 986., 108., 239.);
 	add("rockIce", 216., 1639., 108., 239.);

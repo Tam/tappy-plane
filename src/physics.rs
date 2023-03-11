@@ -79,6 +79,7 @@ fn resolve_collisions (
 		
 		if aabb(player_min, player_max, min, max) {
 			texture.color = Color::RED;
+			// println!("DED");
 		}
 	}
 	
@@ -95,6 +96,7 @@ fn resolve_collisions (
 		
 		if sat(&player_points, &points) {
 			texture.color = Color::PINK;
+			// println!("DED");
 		}
 	}
 }
