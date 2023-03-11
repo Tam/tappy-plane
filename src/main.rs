@@ -11,7 +11,7 @@ use crate::animation::{AnimationIndices, AnimationPlugin, AnimationTimer};
 use crate::assets::{AssetsPlugin, SpriteSheet};
 #[cfg(feature = "debug")]
 use crate::debug::DebugPlugin;
-use crate::physics::{Collider, PhysicsPlugin, Velocity};
+use crate::physics::{AABBCollider, PhysicsPlugin, SATCollider, Velocity};
 use crate::shaders::{ScrollMaterial, ShadersPlugin};
 
 const SCREEN_WIDTH : f32 = 800.;
@@ -64,7 +64,7 @@ fn setup (
         mesh: mesh_assets.add(Mesh::from(shape::Quad::new(Vec2::new(SCREEN_WIDTH, SCREEN_HEIGHT)))).into(),
         material: scroll_material_assets.add(ScrollMaterial {
             scroll_speed: 0.1,
-            rect: ScrollMaterial::rect(0., 355., 800. - 0.3, 480.),
+            rect: ScrollMaterial::rect(0., 355., 800. - 0.4, 480.),
             texture: sprite_sheet.texture_handle.clone(),
         }),
         transform: Transform::from_xyz(0., 0., 1.0),
@@ -77,7 +77,17 @@ fn setup (
     commands.spawn((
         Transform::from_xyz(0., SCREEN_HEIGHT * 0.5 + 15., 0.),
         GlobalTransform::default(),
-        Collider(Vec2::new(SCREEN_WIDTH, 30.)),
+        AABBCollider(Vec2::new(SCREEN_WIDTH, 30.)),
+    ));
+    
+    commands.spawn((
+        Transform::from_xyz(-100., 0., 0.),
+        GlobalTransform::default(),
+        SATCollider(vec![
+            Vec2::new(-50., -50.),
+            Vec2::new(-50., 50.),
+            Vec2::new(50., 50.),
+        ]),
     ));
     
     // Ground
@@ -88,13 +98,13 @@ fn setup (
             mesh: mesh_assets.add(Mesh::from(shape::Quad::new(Vec2::new(SCREEN_WIDTH, 71.)))).into(),
             material: scroll_material_assets.add(ScrollMaterial {
                 scroll_speed: 0.3,
-                rect: ScrollMaterial::rect(0., 142.3, 808., 71.),
+                rect: ScrollMaterial::rect(0., 142.3, 808. - 0.4, 71.),
                 texture: sprite_sheet.texture_handle.clone(),
             }),
             transform: Transform::from_xyz(0., (SCREEN_HEIGHT - 71.) / 2. * -1., 2.),
             ..default()
         },
-        Collider(Vec2::new(SCREEN_WIDTH, 30.)),
+        AABBCollider(Vec2::new(SCREEN_WIDTH, 30.)),
     ));
     
     // Plane
@@ -114,7 +124,7 @@ fn setup (
         ]),
         AnimationTimer(Timer::from_seconds(0.04, TimerMode::Repeating)),
         Velocity::default(),
-        Collider(Vec2::new(88., 73.) * 0.6),
+        AABBCollider(Vec2::new(88., 73.) * 0.6),
     ));
     
 }

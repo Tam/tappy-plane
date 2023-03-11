@@ -21,7 +21,10 @@ impl Plugin for PhysicsPlugin {
 pub struct Velocity (f32);
 
 #[derive(Component)]
-pub struct Collider (pub Vec2);
+pub struct AABBCollider(pub Vec2);
+
+#[derive(Component)]
+pub struct SATCollider (pub Vec<Vec2>);
 
 // Systems
 // =========================================================================
@@ -52,8 +55,9 @@ fn apply_velocity (
 }
 
 fn resolve_collisions (
-	mut player_query : Query<(&GlobalTransform, &Collider, &mut TextureAtlasSprite), With<Velocity>>,
-	collider_query : Query<(&GlobalTransform, &Collider), Without<Velocity>>,
+	mut player_query : Query<(&GlobalTransform, &AABBCollider, &mut TextureAtlasSprite), With<Velocity>>,
+	aabb_collider_query : Query<(&GlobalTransform, &AABBCollider), Without<Velocity>>,
+	sat_collider_query : Query<(&GlobalTransform, &SATCollider), Without<Velocity>>,
 ) {
 	let (
 		player_transform,
@@ -67,7 +71,7 @@ fn resolve_collisions (
 	
 	texture.color = Color::WHITE;
 	
-	for (transform, collider) in &collider_query {
+	for (transform, collider) in &aabb_collider_query {
 		let half = collider.0 * 0.5;
 		let pos = transform.translation().truncate();
 		let min = pos - half;
@@ -75,6 +79,22 @@ fn resolve_collisions (
 		
 		if aabb(player_min, player_max, min, max) {
 			texture.color = Color::RED;
+		}
+	}
+	
+	let player_points = vec![
+		player_min,
+		Vec2::new(player_min.x, player_max.y),
+		player_max,
+		Vec2::new(player_max.x, player_min.y),
+	];
+	
+	for (transform, collider) in &sat_collider_query {
+		let t = transform.translation().truncate();
+		let points : Vec<Vec2> = collider.0.clone().into_iter().map(|f| f + t).collect();
+		
+		if sat(&player_points, &points) {
+			texture.color = Color::PINK;
 		}
 	}
 }
@@ -87,4 +107,55 @@ fn aabb (a_min : Vec2, a_max : Vec2, b_min : Vec2, b_max : Vec2) -> bool {
 	&& a_max.x > b_min.x
 	&& a_min.y < b_max.y
 	&& a_max.y > b_min.y
+}
+
+fn sat (
+	a : &Vec<Vec2>,
+	b : &Vec<Vec2>,
+) -> bool {
+	debug_assert!(a.len() > 2, "a must have at least 3 points");
+	debug_assert!(b.len() > 2, "b must have at least 3 points");
+	
+	let mut poly_1 = a;
+	let mut poly_2 = b;
+	
+	for i in 0..=1 {
+		if i == 1 {
+			poly_1 = b;
+			poly_2 = a;
+		}
+		
+		for a in 0..poly_1.len() {
+			let b = (a + 1) % poly_1.len();
+			
+			let axis_proj = Vec2::new(
+				-(poly_1[b].y - poly_1[a].y),
+				poly_1[b].x - poly_1[a].x,
+			);
+			
+			let mut min_r1 = f32::MAX;
+			let mut max_r1 = f32::MIN;
+			
+			for p in poly_1 {
+				let q = p.x * axis_proj.x + p.y * axis_proj.y;
+				min_r1 = f32::min(min_r1, q);
+				max_r1 = f32::max(max_r1, q);
+			}
+			
+			let mut min_r2 = f32::MAX;
+			let mut max_r2 = f32::MIN;
+			
+			for p in poly_2 {
+				let q = p.x * axis_proj.x + p.y * axis_proj.y;
+				min_r2 = f32::min(min_r2, q);
+				max_r2 = f32::max(max_r2, q);
+			}
+			
+			if !(max_r2 >= min_r1 && max_r1 >= min_r2) {
+				return false;
+			}
+		}
+	}
+	
+	true
 }
