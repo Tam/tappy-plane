@@ -7,7 +7,7 @@ impl Plugin for AssetsPlugin {
 	fn build(&self, app: &mut App) {
 		app
 			.insert_resource(SpriteSheet::default())
-			.add_startup_system(load_sprite_sheet)
+			.add_startup_system(load_sprite_sheet.in_base_set(StartupSet::PreStartup))
 		;
 	}
 }
@@ -19,6 +19,7 @@ impl Plugin for AssetsPlugin {
 pub struct SpriteSheet {
 	pub sprites : HashMap<String, usize>,
 	pub handle : Handle<TextureAtlas>,
+	pub texture_handle : Handle<Image>,
 }
 
 impl SpriteSheet {
@@ -37,7 +38,7 @@ fn load_sprite_sheet (
 ) {
 	let texture_handle = asset_server.load("sheet.png");
 	let mut texture_atlas = TextureAtlas::new_empty(
-		texture_handle,
+		texture_handle.clone(),
 		Vec2::new(1024., 2048.),
 	);
 	
@@ -140,4 +141,5 @@ fn load_sprite_sheet (
 	
 	spritesheet.sprites = sprites;
 	spritesheet.handle = texture_atlas_handle;
+	spritesheet.texture_handle = texture_handle;
 }
