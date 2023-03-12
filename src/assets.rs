@@ -133,7 +133,7 @@ fn load_sprite_sheet (
 	add("tap", 156., 1712., 40., 40.);
 	add("tapLeft", 0., 1996., 85., 42.);
 	add("tapRight", 85., 1996., 85., 42.);
-	add("tapTick", 418., 1350., 59., 59.);
+	add("tapTick", 418., 1350., 59., 59. - 0.3);
 	add("textGameOver", 0., 835., 412., 78.);
 	add("textGetReady", 0., 913., 400., 73.);
 	

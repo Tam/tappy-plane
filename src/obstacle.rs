@@ -2,7 +2,7 @@ use bevy::prelude::*;
 use rand::Rng;
 use crate::assets::SpriteSheet;
 use crate::physics::SATCollider;
-use crate::{SCREEN_WIDTH, Z_OBSTACLE};
+use crate::{AppState, GameState, SCREEN_WIDTH, Z_OBSTACLE};
 
 const SPAWN_OFFSET : f32 = SCREEN_WIDTH * 0.5 + 200.;
 const NEG_SPAWN_OFFSET : f32 = SCREEN_WIDTH * -0.5 - 200.;
@@ -18,9 +18,14 @@ impl Plugin for ObstaclePlugin {
 				gap_min: 150.,
 				gap_max: 200.,
 			})
-			.add_system(spawn_obstacle)
-			.add_system(move_obstacle)
-			.add_system(despawn_obstacle)
+			.add_systems(
+				(
+					spawn_obstacle,
+					move_obstacle,
+					despawn_obstacle,
+				).in_set(OnUpdate(AppState::Game))
+				 .in_set(OnUpdate(GameState::Play))
+			)
 		;
 	}
 }

@@ -1,4 +1,5 @@
 use bevy::prelude::*;
+use crate::{AppState, GameState};
 
 const GRAVITY : f32 = -800.;
 
@@ -7,9 +8,14 @@ pub struct PhysicsPlugin;
 impl Plugin for PhysicsPlugin {
 	fn build(&self, app: &mut App) {
 		app
-			.add_system(input)
-			.add_system(apply_velocity.after(input))
-			.add_system(resolve_collisions.after(apply_velocity))
+			.add_systems(
+				(
+					input,
+					apply_velocity.after(input),
+					resolve_collisions.after(apply_velocity),
+				).in_set(OnUpdate(AppState::Game))
+				 .in_set(OnUpdate(GameState::Play))
+			)
 		;
 	}
 }
@@ -55,21 +61,23 @@ fn apply_velocity (
 }
 
 fn resolve_collisions (
-	mut player_query : Query<(&GlobalTransform, &AABBCollider, &mut TextureAtlasSprite), With<Velocity>>,
+	mut player_query : Query<(&GlobalTransform, &AABBCollider), With<Velocity>>,
 	aabb_collider_query : Query<(&GlobalTransform, &AABBCollider), Without<Velocity>>,
 	sat_collider_query : Query<(&GlobalTransform, &SATCollider), Without<Velocity>>,
+	mut state : ResMut<NextState<GameState>>,
 ) {
 	let (
 		player_transform,
 		player_collider,
-		mut texture,
 	) = player_query.single_mut();
 	let half = player_collider.0 * 0.5;
-	let pos = player_transform.translation().truncate();
-	let player_min = pos - half;
-	let player_max = pos + half;
+	let player_pos = player_transform.translation().truncate();
 	
-	texture.color = Color::WHITE;
+	// Note: Fix for system being run once before transforms have been applied
+	if player_pos == Vec2::ZERO { return; }
+	
+	let player_min = player_pos - half;
+	let player_max = player_pos + half;
 	
 	for (transform, collider) in &aabb_collider_query {
 		let half = collider.0 * 0.5;
@@ -78,9 +86,8 @@ fn resolve_collisions (
 		let max = pos + half;
 		
 		if aabb(player_min, player_max, min, max) {
-			texture.color = Color::RED;
-			// println!("DED");
-		}
+            state.set(GameState::Dead);
+        }
 	}
 	
 	let player_points = vec![
@@ -95,8 +102,7 @@ fn resolve_collisions (
 		let points : Vec<Vec2> = collider.0.clone().into_iter().map(|f| f + t).collect();
 		
 		if sat(&player_points, &points) {
-			texture.color = Color::PINK;
-			// println!("DED");
+			state.set(GameState::Dead);
 		}
 	}
 }
