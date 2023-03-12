@@ -1,5 +1,5 @@
 use bevy::prelude::*;
-use crate::animation::{AnimationIndices, AnimationTimer};
+use crate::sprite_animation::{SpriteAnimationIndices, SpriteAnimationTimer};
 use crate::AppState;
 use crate::assets::SpriteSheet;
 
@@ -42,11 +42,11 @@ fn menu_setup (
 				sprite: sprite_sheet.get("tap"),
 				..default()
 			},
-			AnimationIndices::new(vec![
+			SpriteAnimationIndices::new(vec![
 				sprite_sheet.get("tap").index,
 				sprite_sheet.get("tapTick").index,
 			]),
-			AnimationTimer(Timer::from_seconds(0.5, TimerMode::Repeating)),
+			SpriteAnimationTimer(Timer::from_seconds(0.5, TimerMode::Repeating)),
 		));
 	});
 }

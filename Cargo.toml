@@ -6,6 +6,7 @@ edition = "2021"
 [dependencies]
 bevy_prototype_debug_lines = { version = "0.10.0", optional = true }
 rand = "0.8.5"
+bevy_tweening = { version = "0.7.0", default-features = false }
 
 [dependencies.bevy]
 version = "0.10.0"
@@ -14,7 +15,6 @@ features = [
     "bevy_asset", 			# Assets management
     "bevy_audio", 			# Builtin audio
     "bevy_winit", 			# Window management
-    "bevy_animation",       # Animation
 
     "bevy_render", 			# Rendering framework core
     "bevy_core_pipeline", 	# Common rendering abstractions

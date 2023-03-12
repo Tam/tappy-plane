@@ -1,5 +1,5 @@
 mod assets;
-mod animation;
+mod sprite_animation;
 mod physics;
 #[cfg(feature = "debug")]
 mod debug;
@@ -8,7 +8,7 @@ mod obstacle;
 mod scenes;
 
 use bevy::prelude::*;
-use crate::animation::AnimationPlugin;
+use bevy_tweening::TweeningPlugin;
 use crate::assets::AssetsPlugin;
 #[cfg(feature = "debug")]
 use crate::debug::DebugPlugin;
@@ -16,6 +16,7 @@ use crate::obstacle::ObstaclePlugin;
 use crate::physics::PhysicsPlugin;
 use crate::scenes::ScenesPlugin;
 use crate::shaders::ShadersPlugin;
+use crate::sprite_animation::SpriteAnimationPlugin;
 
 const SCREEN_WIDTH : f32 = 800.;
 const SCREEN_HEIGHT : f32 = 480.;
@@ -35,6 +36,7 @@ enum AppState {
 #[derive(Debug, Copy, Clone, Default, Eq, PartialEq, Hash, States)]
 enum GameState {
 	#[default]
+	PreEnter,
 	Enter,
 	Play,
 	Exit,
@@ -56,9 +58,10 @@ fn main() {
 			}),
 			..default()
 		}))
+		.add_plugin(TweeningPlugin)
 		.add_plugin(ShadersPlugin)
 		.add_plugin(AssetsPlugin)
-		.add_plugin(AnimationPlugin)
+		.add_plugin(SpriteAnimationPlugin)
 		.add_plugin(PhysicsPlugin)
 		.add_plugin(ObstaclePlugin)
 		.add_plugin(ScenesPlugin)

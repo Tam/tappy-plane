@@ -1,10 +1,15 @@
+use std::time::Duration;
 use bevy::prelude::*;
 use bevy::sprite::MaterialMesh2dBundle;
-use crate::animation::{AnimationIndices, AnimationTimer};
+use bevy_tweening::{Animator, EaseFunction, Tween, TweenCompleted};
+use bevy_tweening::lens::TransformPositionLens;
+use crate::sprite_animation::{SpriteAnimationIndices, SpriteAnimationTimer};
 use crate::{AppState, GameState, SCREEN_HEIGHT, SCREEN_WIDTH, Z_BACKGROUND, Z_GROUND, Z_PLANE};
 use crate::assets::SpriteSheet;
 use crate::physics::{AABBCollider, Velocity};
 use crate::shaders::ScrollMaterial;
+
+const IN_ANIM_COMPLETE : u64 = 1;
 
 pub struct GamePlugin;
 
@@ -12,6 +17,8 @@ impl Plugin for GamePlugin {
 	fn build(&self, app: &mut App) {
 		app
 			.add_system(setup_game.in_schedule(OnEnter(AppState::Game)))
+			.add_system(animate_in.in_schedule(OnEnter(GameState::Enter)))
+			.add_system(handle_anim_event.in_set(OnUpdate(AppState::Game)))
 			.add_system(teardown_game.in_schedule(OnExit(AppState::Game)))
 		;
 	}
@@ -23,6 +30,9 @@ impl Plugin for GamePlugin {
 #[derive(Component)]
 struct GameRoot;
 
+#[derive(Component)]
+struct Plane;
+
 // Systems
 // =========================================================================
 
@@ -31,6 +41,7 @@ fn setup_game(
 	sprite_sheet : Res<SpriteSheet>,
 	mut mesh_assets : ResMut<Assets<Mesh>>,
 	mut scroll_material_assets : ResMut<Assets<ScrollMaterial>>,
+	mut state : ResMut<NextState<GameState>>,
 ) {
 	commands.spawn((
 		GameRoot,
@@ -100,22 +111,55 @@ fn setup_game(
 		// -------------------------------------------------------------------------
 		
 		commands.spawn((
+			Plane,
 			SpriteSheetBundle {
 				texture_atlas: sprite_sheet.handle.clone(),
 				sprite: sprite_sheet.get("planeBlue1"),
 				transform: Transform::from_xyz(SCREEN_WIDTH * -0.2, 0., Z_PLANE),
 				..default()
 			},
-			AnimationIndices::new(vec![
+			SpriteAnimationIndices::new(vec![
 				sprite_sheet.get("planeBlue1").index,
 				sprite_sheet.get("planeBlue2").index,
 				sprite_sheet.get("planeBlue3").index,
 			]),
-			AnimationTimer(Timer::from_seconds(0.04, TimerMode::Repeating)),
+			SpriteAnimationTimer(Timer::from_seconds(0.04, TimerMode::Repeating)),
 			Velocity::default(),
 			AABBCollider(Vec2::new(88., 73.) * 0.6),
 		));
 	});
+	
+	state.set(GameState::Enter);
+}
+
+fn animate_in (
+	mut commands : Commands,
+	mut query : Query<Entity, With<Plane>>,
+) {
+	if let Ok(entity) = query.get_single_mut() {
+		let tween = Tween::new(
+			EaseFunction::QuarticOut,
+			Duration::from_secs(2),
+			TransformPositionLens {
+				start: Vec3::new(SCREEN_WIDTH * -0.8, 200., Z_PLANE),
+				end: Vec3::new(SCREEN_WIDTH * -0.2, 0., Z_PLANE),
+			},
+		).with_completed_event(IN_ANIM_COMPLETE);
+		
+		commands.entity(entity).insert(Animator::new(tween));
+	}
+}
+
+fn handle_anim_event (
+	mut state : ResMut<NextState<GameState>>,
+	mut reader: EventReader<TweenCompleted>,
+) {
+	for event in reader.iter() {
+		match event.user_data {
+			IN_ANIM_COMPLETE => state.set(GameState::Play),
+			_ => unreachable!("Unknown anim event, {}", event.user_data),
+		}
+	}
 }
 
 fn teardown_game (

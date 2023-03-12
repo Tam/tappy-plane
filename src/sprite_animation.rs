@@ -1,8 +1,8 @@
 use bevy::prelude::*;
 
-pub struct AnimationPlugin;
+pub struct SpriteAnimationPlugin;
 
-impl Plugin for AnimationPlugin {
+impl Plugin for SpriteAnimationPlugin {
 	fn build(&self, app: &mut App) {
 		app
 			.add_system(animate_sprite)
@@ -14,14 +14,14 @@ impl Plugin for AnimationPlugin {
 // =========================================================================
 
 #[derive(Component)]
-pub struct AnimationIndices {
+pub struct SpriteAnimationIndices {
 	pub indices : Vec<usize>,
 	current : usize,
 }
 
-impl AnimationIndices {
+impl SpriteAnimationIndices {
 	pub fn new (indices : Vec<usize>) -> Self {
-		AnimationIndices {
+		SpriteAnimationIndices {
 			current: indices[0],
 			indices,
 		}
@@ -29,13 +29,13 @@ impl AnimationIndices {
 }
 
 #[derive(Component, Deref, DerefMut)]
-pub struct AnimationTimer (pub Timer);
+pub struct SpriteAnimationTimer(pub Timer);
 
 // Systems
 // =========================================================================
 
 fn animate_sprite (
-	mut query : Query<(&mut AnimationIndices, &mut AnimationTimer, &mut TextureAtlasSprite)>,
+	mut query : Query<(&mut SpriteAnimationIndices, &mut SpriteAnimationTimer, &mut TextureAtlasSprite)>,
 	time : Res<Time>,
 ) {
 	for (mut indices, mut timer, mut sprite) in query.iter_mut() {
