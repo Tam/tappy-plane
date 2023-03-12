@@ -1,6 +1,10 @@
+use std::time::Duration;
 use bevy::prelude::*;
+use bevy_tweening::{Animator, Delay, EaseFunction, Tween};
+use bevy_tweening::lens::TransformPositionLens;
+use rand::Rng;
 use crate::sprite_animation::{SpriteAnimationIndices, SpriteAnimationTimer};
-use crate::AppState;
+use crate::{AppState, SCREEN_HEIGHT};
 use crate::assets::SpriteSheet;
 use crate::transitions::{TransitionState, TransitionTo};
 
@@ -37,6 +41,53 @@ fn menu_setup (
 		GlobalTransform::default(),
 	))
 	.with_children(|commands| {
+		let mut rng = rand::thread_rng();
+		
+		let mut spawn = |o : f32, l : char| {
+			debug_assert!(l.is_uppercase(), "Char must be upper case!");
+			let mut c = String::from("letter");
+			c.push(l);
+			
+			let pos = Transform::from_xyz(o * 40., SCREEN_HEIGHT * 0.6, 0.)
+				.with_rotation(Quat::from_rotation_z(
+					rng.gen_range(-5.0f32 ..= 5.0).to_radians()
+				));
+			
+			let mut end = pos.translation;
+			end.y = 0.;
+			
+			commands.spawn((
+				SpriteSheetBundle {
+					texture_atlas: sprite_sheet.handle.clone(),
+					sprite: sprite_sheet.get(c.as_str()),
+					transform: pos,
+					..default()
+				},
+				Animator::new(Delay::new(
+					Duration::from_millis(rng.gen_range(0..1000))
+				).then(Tween::new(
+					EaseFunction::BounceOut,
+					Duration::from_secs(1),
+					TransformPositionLens {
+						start: pos.translation,
+						end,
+					},
+				))),
+			));
+		};
+		
+		spawn(-5., 'T');
+		spawn(-4., 'A');
+		spawn(-3., 'P');
+		spawn(-2., 'P');
+		spawn(-1., 'Y');
+		
+		spawn(1., 'P');
+		spawn(2., 'L');
+		spawn(3., 'A');
+		spawn(4., 'N');
+		spawn(5., 'E');
+		
 		commands.spawn((
 			SpriteSheetBundle {
 				texture_atlas: sprite_sheet.handle.clone(),
