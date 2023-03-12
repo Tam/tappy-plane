@@ -64,7 +64,7 @@ fn menu_setup (
 					..default()
 				},
 				Animator::new(Delay::new(
-					Duration::from_millis(rng.gen_range(0..1000))
+					Duration::from_millis(rng.gen_range(1..1000))
 				).then(Tween::new(
 					EaseFunction::BounceOut,
 					Duration::from_secs(1),
