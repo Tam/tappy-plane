@@ -6,6 +6,7 @@ mod debug;
 mod shaders;
 mod obstacle;
 mod scenes;
+mod transitions;
 
 use bevy::prelude::*;
 use bevy_tweening::TweeningPlugin;
@@ -17,6 +18,7 @@ use crate::physics::PhysicsPlugin;
 use crate::scenes::ScenesPlugin;
 use crate::shaders::ShadersPlugin;
 use crate::sprite_animation::SpriteAnimationPlugin;
+use crate::transitions::TransitionsPlugin;
 
 const SCREEN_WIDTH : f32 = 800.;
 const SCREEN_HEIGHT : f32 = 480.;
@@ -26,16 +28,22 @@ const Z_OBSTACLE : f32 = 1.;
 const Z_GROUND : f32 = 2.;
 const Z_PLANE : f32 = 3.;
 const Z_GAME_TEXT : f32 = 4.;
+const Z_TRANSITION : f32 = 100.;
+
+const GAME_IN_ANIM_COMPLETE : u64 = 1;
+const GAME_OVER_ANIM_COMPLETE : u64 = 2;
+const TRANSITION_START_COMPLETE : u64 = 3;
+const TRANSITION_END_COMPLETE : u64 = 4;
 
 #[derive(Debug, Copy, Clone, Default, Eq, PartialEq, Hash, States)]
-enum AppState {
+pub enum AppState {
 	#[default]
 	Menu,
 	Game,
 }
 
 #[derive(Debug, Copy, Clone, Default, Eq, PartialEq, Hash, States)]
-enum GameState {
+pub enum GameState {
 	#[default]
 	PreEnter,
 	Enter,
@@ -62,6 +70,7 @@ fn main() {
 		.add_plugin(TweeningPlugin)
 		.add_plugin(ShadersPlugin)
 		.add_plugin(AssetsPlugin)
+		.add_plugin(TransitionsPlugin)
 		.add_plugin(SpriteAnimationPlugin)
 		.add_plugin(PhysicsPlugin)
 		.add_plugin(ObstaclePlugin)

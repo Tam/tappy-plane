@@ -2,6 +2,7 @@ use bevy::prelude::*;
 use crate::sprite_animation::{SpriteAnimationIndices, SpriteAnimationTimer};
 use crate::AppState;
 use crate::assets::SpriteSheet;
+use crate::transitions::{TransitionState, TransitionTo};
 
 pub struct MenuPlugin;
 
@@ -54,10 +55,12 @@ fn menu_setup (
 fn menu_loop (
 	mouse : Res<Input<MouseButton>>,
 	touch : Res<Touches>,
-	mut state : ResMut<NextState<AppState>>,
+	mut to_state : ResMut<TransitionTo<AppState>>,
+	mut transition_state: ResMut<NextState<TransitionState>>,
 ) {
 	if mouse.just_pressed(MouseButton::Left) || touch.any_just_pressed() {
-		state.set(AppState::Game);
+		to_state.0 = Some(AppState::Game);
+		transition_state.set(TransitionState::Start);
 	}
 }
 

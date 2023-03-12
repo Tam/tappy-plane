@@ -4,12 +4,11 @@ use bevy::sprite::MaterialMesh2dBundle;
 use bevy_tweening::{Animator, Delay, EaseFunction, Tween, TweenCompleted};
 use bevy_tweening::lens::TransformPositionLens;
 use crate::sprite_animation::{SpriteAnimationIndices, SpriteAnimationTimer};
-use crate::{AppState, GameState, SCREEN_HEIGHT, SCREEN_WIDTH, Z_BACKGROUND, Z_GAME_TEXT, Z_GROUND, Z_PLANE};
+use crate::{AppState, GAME_IN_ANIM_COMPLETE, GAME_OVER_ANIM_COMPLETE, GameState, SCREEN_HEIGHT, SCREEN_WIDTH, Z_BACKGROUND, Z_GAME_TEXT, Z_GROUND, Z_PLANE};
 use crate::assets::SpriteSheet;
 use crate::physics::{AABBCollider, Velocity};
 use crate::shaders::ScrollMaterial;
-
-const IN_ANIM_COMPLETE : u64 = 1;
+use crate::transitions::{TransitionState, TransitionTo};
 
 pub struct GamePlugin;
 
@@ -167,7 +166,7 @@ fn animate_in (
 				start: Vec3::new(SCREEN_WIDTH * -0.8, 200., Z_PLANE),
 				end: Vec3::new(SCREEN_WIDTH * -0.2, 0., Z_PLANE),
 			},
-		).with_completed_event(IN_ANIM_COMPLETE);
+		).with_completed_event(GAME_IN_ANIM_COMPLETE);
 		
 		commands.entity(entity).insert(Animator::new(tween));
 	}
@@ -179,8 +178,9 @@ fn handle_anim_event (
 ) {
 	for event in reader.iter() {
 		match event.user_data {
-			IN_ANIM_COMPLETE => state.set(GameState::Play),
-			_ => unreachable!("Unknown anim event, {}", event.user_data),
+			GAME_IN_ANIM_COMPLETE => state.set(GameState::Play),
+			GAME_OVER_ANIM_COMPLETE => { /* Handled in dead_loop */ },
+			_ => {},
 		}
 	}
 }
@@ -227,7 +227,7 @@ fn dead_enter (
 					start: Vec3::new(0., SCREEN_HEIGHT * 0.5, Z_GAME_TEXT),
 					end: Vec3::new(0., 30., Z_GAME_TEXT),
 				},
-			)),
+			).with_completed_event(GAME_OVER_ANIM_COMPLETE)),
 		));
 		
 		// Tap prompt
@@ -241,7 +241,7 @@ fn dead_enter (
 				sprite_sheet.get("tap").index,
 				sprite_sheet.get("tapTick").index,
 			]),
-			SpriteAnimationTimer(Timer::from_seconds(1., TimerMode::Repeating)),
+			SpriteAnimationTimer(Timer::from_seconds(0.5, TimerMode::Repeating)),
 			Animator::new(
 				Delay::new(Duration::from_millis(500)).then(Tween::new(
 					EaseFunction::QuarticOut,
@@ -256,19 +256,30 @@ fn dead_enter (
 	});
 }
 
+#[allow(clippy::too_many_arguments)]
 fn dead_loop (
 	mut query : Query<&mut Transform, With<Plane>>,
 	death_speed : Res<DeathSpeed>,
 	time : Res<Time>,
 	mouse : Res<Input<MouseButton>>,
 	touch : Res<Touches>,
-	mut state : ResMut<NextState<AppState>>,
+	mut can_restart : Local<bool>,
+	mut reader : EventReader<TweenCompleted>,
+	mut to_state : ResMut<TransitionTo<AppState>>,
+	mut transition_state: ResMut<NextState<TransitionState>>,
 ) {
 	if let Ok(mut transform) = query.get_single_mut() {
 		transform.translation.x -= death_speed.0 * time.delta_seconds();
 	}
 	
-	if mouse.just_pressed(MouseButton::Left) || touch.any_just_pressed() {
-		state.set(AppState::Menu);
+	for event in reader.iter() {
+		if event.user_data == GAME_OVER_ANIM_COMPLETE {
+			*can_restart = true;
+		}
+	}
+	
+	if *can_restart && mouse.just_pressed(MouseButton::Left) || touch.any_just_pressed() {
+		to_state.0 = Some(AppState::Menu);
+		transition_state.set(TransitionState::Start);
 	}
 }
