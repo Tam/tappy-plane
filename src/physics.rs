@@ -1,5 +1,7 @@
 use bevy::prelude::*;
 use crate::{AppState, GameState};
+use crate::obstacle::ObstacleSpawner;
+use crate::scenes::{DeathSpeed, GroundSpeed};
 
 const GRAVITY : f32 = -800.;
 
@@ -64,7 +66,10 @@ fn resolve_collisions (
 	mut player_query : Query<(&GlobalTransform, &AABBCollider), With<Velocity>>,
 	aabb_collider_query : Query<(&GlobalTransform, &AABBCollider), Without<Velocity>>,
 	sat_collider_query : Query<(&GlobalTransform, &SATCollider), Without<Velocity>>,
+	spawner : Res<ObstacleSpawner>,
+	ground_speed : Res<GroundSpeed>,
 	mut state : ResMut<NextState<GameState>>,
+	mut death_speed : ResMut<DeathSpeed>,
 ) {
 	let (
 		player_transform,
@@ -72,9 +77,6 @@ fn resolve_collisions (
 	) = player_query.single_mut();
 	let half = player_collider.0 * 0.5;
 	let player_pos = player_transform.translation().truncate();
-	
-	// Note: Fix for system being run once before transforms have been applied
-	if player_pos == Vec2::ZERO { return; }
 	
 	let player_min = player_pos - half;
 	let player_max = player_pos + half;
@@ -86,6 +88,7 @@ fn resolve_collisions (
 		let max = pos + half;
 		
 		if aabb(player_min, player_max, min, max) {
+			death_speed.0 = ground_speed.0 * 0.8;
             state.set(GameState::Dead);
         }
 	}
@@ -102,6 +105,7 @@ fn resolve_collisions (
 		let points : Vec<Vec2> = collider.0.clone().into_iter().map(|f| f + t).collect();
 		
 		if sat(&player_points, &points) {
+			death_speed.0 = spawner.speed;
 			state.set(GameState::Dead);
 		}
 	}

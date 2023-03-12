@@ -134,7 +134,7 @@ fn load_sprite_sheet (
 	add("tapLeft", 0., 1996., 85., 42.);
 	add("tapRight", 85., 1996., 85., 42.);
 	add("tapTick", 418., 1350., 59., 59. - 0.3);
-	add("textGameOver", 0., 835., 412., 78.);
+	add("textGameOver", 0., 835.4, 412., 78. - 0.4);
 	add("textGetReady", 0., 913., 400., 73.);
 	
 	let texture_atlas_handle = texture_atlases.add(texture_atlas);

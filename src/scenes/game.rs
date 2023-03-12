@@ -1,10 +1,10 @@
 use std::time::Duration;
 use bevy::prelude::*;
 use bevy::sprite::MaterialMesh2dBundle;
-use bevy_tweening::{Animator, EaseFunction, Tween, TweenCompleted};
+use bevy_tweening::{Animator, Delay, EaseFunction, Tween, TweenCompleted};
 use bevy_tweening::lens::TransformPositionLens;
 use crate::sprite_animation::{SpriteAnimationIndices, SpriteAnimationTimer};
-use crate::{AppState, GameState, SCREEN_HEIGHT, SCREEN_WIDTH, Z_BACKGROUND, Z_GROUND, Z_PLANE};
+use crate::{AppState, GameState, SCREEN_HEIGHT, SCREEN_WIDTH, Z_BACKGROUND, Z_GAME_TEXT, Z_GROUND, Z_PLANE};
 use crate::assets::SpriteSheet;
 use crate::physics::{AABBCollider, Velocity};
 use crate::shaders::ScrollMaterial;
@@ -16,19 +16,35 @@ pub struct GamePlugin;
 impl Plugin for GamePlugin {
 	fn build(&self, app: &mut App) {
 		app
+			.insert_resource(GroundSpeed(300.))
+			.insert_resource(DeathSpeed(0.))
+			
 			.add_system(setup_game.in_schedule(OnEnter(AppState::Game)))
+			.add_system(teardown_game.in_schedule(OnExit(AppState::Game)))
+			
 			.add_system(animate_in.in_schedule(OnEnter(GameState::Enter)))
 			.add_system(handle_anim_event.in_set(OnUpdate(AppState::Game)))
-			.add_system(teardown_game.in_schedule(OnExit(AppState::Game)))
+		
+			.add_system(dead_enter.in_schedule(OnEnter(GameState::Dead)))
+			.add_system(dead_loop.in_set(OnUpdate(GameState::Dead)))
 		;
 	}
 }
+
+// Resources
+// =========================================================================
+
+#[derive(Resource)]
+pub struct GroundSpeed (pub f32);
+
+#[derive(Resource)]
+pub struct DeathSpeed (pub f32);
 
 // Components
 // =========================================================================
 
 #[derive(Component)]
-struct GameRoot;
+pub struct GameRoot;
 
 #[derive(Component)]
 struct Plane;
@@ -36,12 +52,16 @@ struct Plane;
 // Systems
 // =========================================================================
 
+// Setup
+// -------------------------------------------------------------------------
+
 fn setup_game(
 	mut commands : Commands,
 	sprite_sheet : Res<SpriteSheet>,
 	mut mesh_assets : ResMut<Assets<Mesh>>,
 	mut scroll_material_assets : ResMut<Assets<ScrollMaterial>>,
 	mut state : ResMut<NextState<GameState>>,
+	ground_speed : Res<GroundSpeed>,
 ) {
 	commands.spawn((
 		GameRoot,
@@ -97,7 +117,7 @@ fn setup_game(
 			MaterialMesh2dBundle {
 				mesh: mesh_assets.add(Mesh::from(shape::Quad::new(Vec2::new(SCREEN_WIDTH, 71.)))).into(),
 				material: scroll_material_assets.add(ScrollMaterial {
-					scroll_speed: 0.3,
+					scroll_speed: ground_speed.0 * 0.001,
 					rect: ScrollMaterial::rect(0., 142.3, 808. - 0.4, 71.),
 					texture: sprite_sheet.texture_handle.clone(),
 				}),
@@ -132,6 +152,9 @@ fn setup_game(
 	state.set(GameState::Enter);
 }
 
+// Animations
+// -------------------------------------------------------------------------
+
 fn animate_in (
 	mut commands : Commands,
 	mut query : Query<Entity, With<Plane>>,
@@ -162,6 +185,9 @@ fn handle_anim_event (
 	}
 }
 
+// Teardown
+// -------------------------------------------------------------------------
+
 fn teardown_game (
 	mut commands : Commands,
 	query : Query<Entity, With<GameRoot>>,
@@ -174,4 +200,75 @@ fn teardown_game (
 	
 	// Reset game state
 	state.set(GameState::default());
+}
+
+// Dead
+// -------------------------------------------------------------------------
+
+fn dead_enter (
+	mut commands : Commands,
+	root_query : Query<Entity, With<GameRoot>>,
+	sprite_sheet : Res<SpriteSheet>,
+) {
+	let root = root_query.single();
+	
+	commands.entity(root).with_children(|commands| {
+		// Game over text
+		commands.spawn((
+			SpriteSheetBundle {
+				texture_atlas: sprite_sheet.handle.clone(),
+				sprite: sprite_sheet.get("textGameOver"),
+				..default()
+			},
+			Animator::new(Tween::new(
+				EaseFunction::QuarticOut,
+				Duration::from_secs(1),
+				TransformPositionLens {
+					start: Vec3::new(0., SCREEN_HEIGHT * 0.5, Z_GAME_TEXT),
+					end: Vec3::new(0., 30., Z_GAME_TEXT),
+				},
+			)),
+		));
+		
+		// Tap prompt
+		commands.spawn((
+			SpriteSheetBundle {
+				texture_atlas: sprite_sheet.handle.clone(),
+				sprite: sprite_sheet.get("tap"),
+				..default()
+			},
+			SpriteAnimationIndices::new(vec![
+				sprite_sheet.get("tap").index,
+				sprite_sheet.get("tapTick").index,
+			]),
+			SpriteAnimationTimer(Timer::from_seconds(1., TimerMode::Repeating)),
+			Animator::new(
+				Delay::new(Duration::from_millis(500)).then(Tween::new(
+					EaseFunction::QuarticOut,
+					Duration::from_secs(1),
+					TransformPositionLens {
+						start: Vec3::new(0., SCREEN_HEIGHT * -0.5, Z_GAME_TEXT),
+						end: Vec3::new(0., -50., Z_GAME_TEXT),
+					},
+				)),
+			),
+		));
+	});
+}
+
+fn dead_loop (
+	mut query : Query<&mut Transform, With<Plane>>,
+	death_speed : Res<DeathSpeed>,
+	time : Res<Time>,
+	mouse : Res<Input<MouseButton>>,
+	touch : Res<Touches>,
+	mut state : ResMut<NextState<AppState>>,
+) {
+	if let Ok(mut transform) = query.get_single_mut() {
+		transform.translation.x -= death_speed.0 * time.delta_seconds();
+	}
+	
+	if mouse.just_pressed(MouseButton::Left) || touch.any_just_pressed() {
+		state.set(AppState::Menu);
+	}
 }

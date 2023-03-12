@@ -3,6 +3,7 @@ use rand::Rng;
 use crate::assets::SpriteSheet;
 use crate::physics::SATCollider;
 use crate::{AppState, GameState, SCREEN_WIDTH, Z_OBSTACLE};
+use crate::scenes::GameRoot;
 
 const SPAWN_OFFSET : f32 = SCREEN_WIDTH * 0.5 + 200.;
 const NEG_SPAWN_OFFSET : f32 = SCREEN_WIDTH * -0.5 - 200.;
@@ -18,13 +19,14 @@ impl Plugin for ObstaclePlugin {
 				gap_min: 150.,
 				gap_max: 200.,
 			})
-			.add_systems(
-				(
-					spawn_obstacle,
-					move_obstacle,
-					despawn_obstacle,
-				).in_set(OnUpdate(AppState::Game))
-				 .in_set(OnUpdate(GameState::Play))
+			.add_systems((
+				move_obstacle,
+				despawn_obstacle,
+			).in_set(OnUpdate(AppState::Game)))
+			.add_system(
+				spawn_obstacle
+					.in_set(OnUpdate(AppState::Game))
+					.in_set(OnUpdate(GameState::Play))
 			)
 		;
 	}
@@ -53,19 +55,23 @@ pub struct Obstacle;
 pub fn spawn_obstacle (
 	mut commands : Commands,
 	sprite_sheet : Res<SpriteSheet>,
+	root_query : Query<Entity, With<GameRoot>>,
 	time : Res<Time>,
 	mut spawner : ResMut<ObstacleSpawner>,
 ) {
+	let root = root_query.single();
 	spawner.timer.tick(time.delta());
 	
 	if spawner.timer.just_finished() {
-		spawn(
-			&mut commands,
-			&sprite_sheet,
-			SPAWN_OFFSET,
-			spawner.gap_min,
-			spawner.gap_max,
-		);
+		commands.entity(root).with_children(|commands| {
+			spawn(
+				commands,
+				&sprite_sheet,
+				SPAWN_OFFSET,
+				spawner.gap_min,
+				spawner.gap_max,
+			);
+		});
 	}
 }
 
@@ -94,7 +100,7 @@ pub fn despawn_obstacle (
 // =========================================================================
 
 fn spawn(
-	commands : &mut Commands,
+	commands : &mut ChildBuilder,
 	sprite_sheet : &Res<SpriteSheet>,
 	start_x : f32,
 	gap_min : f32,

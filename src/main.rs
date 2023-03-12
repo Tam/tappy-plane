@@ -25,6 +25,7 @@ const Z_BACKGROUND : f32 = 0.;
 const Z_OBSTACLE : f32 = 1.;
 const Z_GROUND : f32 = 2.;
 const Z_PLANE : f32 = 3.;
+const Z_GAME_TEXT : f32 = 4.;
 
 #[derive(Debug, Copy, Clone, Default, Eq, PartialEq, Hash, States)]
 enum AppState {

@@ -6,6 +6,8 @@ use crate::scenes::menu::MenuPlugin;
 mod menu;
 mod game;
 
+pub use game::*;
+
 pub struct ScenesPlugin;
 
 impl Plugin for ScenesPlugin {
