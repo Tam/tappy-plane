@@ -54,7 +54,7 @@ fn menu_setup (
 				));
 			
 			let mut end = pos.translation;
-			end.y = 0.;
+			end.y = 20.;
 			
 			commands.spawn((
 				SpriteSheetBundle {
@@ -92,6 +92,7 @@ fn menu_setup (
 			SpriteSheetBundle {
 				texture_atlas: sprite_sheet.handle.clone(),
 				sprite: sprite_sheet.get("tap"),
+				transform: Transform::from_xyz(0., SCREEN_HEIGHT * -0.7, 0.),
 				..default()
 			},
 			SpriteAnimationIndices::new(vec![
@@ -99,6 +100,14 @@ fn menu_setup (
 				sprite_sheet.get("tapTick").index,
 			]),
 			SpriteAnimationTimer(Timer::from_seconds(0.5, TimerMode::Repeating)),
+			Animator::new(Delay::new(Duration::from_secs(1)).then(Tween::new(
+				EaseFunction::QuarticOut,
+				Duration::from_secs(1),
+				TransformPositionLens {
+					start: Vec3::new(0., SCREEN_HEIGHT * -0.5, 0.),
+					end: Vec3::new(0., -80., 0.),
+				},
+			))),
 		));
 	});
 }

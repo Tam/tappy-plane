@@ -29,7 +29,7 @@ impl Plugin for PhysicsPlugin {
 pub struct Velocity (f32);
 
 #[derive(Component)]
-pub struct AABBCollider(pub Vec2);
+pub struct AABBCollider(pub Vec2, pub Option<Vec2>);
 
 #[derive(Component)]
 pub struct SATCollider (pub Vec<Vec2>);
@@ -76,7 +76,7 @@ fn resolve_collisions (
 		player_collider,
 	) = player_query.single_mut();
 	let half = player_collider.0 * 0.5;
-	let player_pos = player_transform.translation().truncate();
+	let player_pos = player_transform.translation().truncate() + player_collider.1.unwrap_or(Vec2::ZERO);
 	
 	let player_min = player_pos - half;
 	let player_max = player_pos + half;

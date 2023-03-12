@@ -24,7 +24,7 @@ fn visualise_aabb_colliders(
 	for (transform, collider) in &query {
 		shapes
 			.rect()
-			.position(transform.translation())
+			.position(transform.translation() + collider.1.unwrap_or(Vec2::ZERO).extend(0.))
 			.size(collider.0)
 			.color(Color::RED)
 		;

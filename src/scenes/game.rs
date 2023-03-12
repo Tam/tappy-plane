@@ -106,7 +106,7 @@ fn setup_game(
 		commands.spawn((
 			Transform::from_xyz(0., SCREEN_HEIGHT * 0.5 + 15., 0.),
 			GlobalTransform::default(),
-			AABBCollider(Vec2::new(SCREEN_WIDTH, 30.)),
+			AABBCollider(Vec2::new(SCREEN_WIDTH, 30.), None),
 		));
 		
 		// Ground
@@ -123,7 +123,7 @@ fn setup_game(
 				transform: Transform::from_xyz(0., (SCREEN_HEIGHT - 71.) / 2. * -1., Z_GROUND),
 				..default()
 			},
-			AABBCollider(Vec2::new(SCREEN_WIDTH, 30.)),
+			AABBCollider(Vec2::new(SCREEN_WIDTH, 30.), None),
 		));
 		
 		// Plane
@@ -144,7 +144,10 @@ fn setup_game(
 			]),
 			SpriteAnimationTimer(Timer::from_seconds(0.04, TimerMode::Repeating)),
 			Velocity::default(),
-			AABBCollider(Vec2::new(88., 73.) * 0.6),
+			AABBCollider(
+				Vec2::new(80., 73.) * 0.6,
+				Some(Vec2::new(10., 0.)),
+			),
 		));
 	});
 	
