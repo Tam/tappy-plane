@@ -10,7 +10,8 @@ impl Plugin for TransitionsPlugin {
 	fn build(&self, app: &mut App) {
 		app
 			.add_state::<TransitionState>()
-			.insert_resource(TransitionTo::<AppState>(None))
+			.insert_resource(TransitionTo(None))
+			.add_system(transition_watcher.in_set(OnUpdate(TransitionState::None)))
 			.add_system(transition_start.in_schedule(OnEnter(TransitionState::Start)))
 			.add_system(transition_events)
 			.add_system(transition_end.in_schedule(OnEnter(TransitionState::End)))
@@ -22,7 +23,7 @@ impl Plugin for TransitionsPlugin {
 // =========================================================================
 
 #[derive(Debug, Copy, Clone, Default, Eq, PartialEq, Hash, States)]
-pub enum TransitionState {
+enum TransitionState {
 	#[default]
 	None,
 	Start,
@@ -33,7 +34,7 @@ pub enum TransitionState {
 // =========================================================================
 
 #[derive(Resource)]
-pub struct TransitionTo <S: States>(pub Option<S>);
+pub struct TransitionTo (pub Option<AppState>);
 
 // Components
 // =========================================================================
@@ -43,6 +44,15 @@ struct TransitionOverlay;
 
 // Systems
 // =========================================================================
+
+fn transition_watcher (
+	to : Res<TransitionTo>,
+	current_transition_state : Res<State<TransitionState>>,
+	mut transition_state: ResMut<NextState<TransitionState>>,
+) {
+	if to.0.is_none() || !current_transition_state.0.eq(&TransitionState::None) { return; }
+	transition_state.set(TransitionState::Start);
+}
 
 fn transition_start (
 	mut commands : Commands,
@@ -77,7 +87,7 @@ fn transition_events (
 	mut reader : EventReader<TweenCompleted>,
 	mut commands : Commands,
 	query : Query<Entity, With<TransitionOverlay>>,
-	mut to_state : ResMut<TransitionTo<AppState>>,
+	mut to_state : ResMut<TransitionTo>,
 ) {
 	if let Ok(entity) = query.get_single() {
 		for event in reader.iter() {

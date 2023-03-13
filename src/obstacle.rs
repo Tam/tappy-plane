@@ -1,5 +1,6 @@
 use bevy::prelude::*;
 use rand::Rng;
+use rand::seq::SliceRandom;
 use crate::assets::SpriteSheet;
 use crate::physics::SATCollider;
 use crate::{AppState, GameState, SCREEN_WIDTH, Z_OBSTACLE};
@@ -107,6 +108,8 @@ fn spawn(
 	gap_max : f32,
 ) {
 	let mut rng = rand::thread_rng();
+	let down = vec!["rockDown", "rockGrassDown"];
+	let up = vec!["rock", "rockGrass"];
 	
 	commands.spawn((
 		Transform::from_xyz(start_x, 0., Z_OBSTACLE),
@@ -120,34 +123,98 @@ fn spawn(
 		let top_y = rng.gen_range(0. ..= gap);
 		let bottom_y = gap - top_y;
 		
-		commands.spawn((
-			SpriteSheetBundle {
-				texture_atlas: sprite_sheet.handle.clone(),
-				sprite: sprite_sheet.get("rockDown"),
-				transform: Transform::from_xyz(rng.gen_range(-10.0..=10.), 119.5 + top_y, Z_OBSTACLE),
-				..default()
-			},
-			SATCollider(vec![
-				Vec2::new(-50., 119.5),
-				Vec2::new(50., 119.5),
-				Vec2::new(15., -119.5),
-				Vec2::new(10., -119.5),
-			]),
-		));
+		// Down
+		// -------------------------------------------------------------------------
 		
-		commands.spawn((
-			SpriteSheetBundle {
-				texture_atlas: sprite_sheet.handle.clone(),
-				sprite: sprite_sheet.get("rock"),
-				transform: Transform::from_xyz(rng.gen_range(-10.0..=10.), -(119.5 + bottom_y), Z_OBSTACLE),
-				..default()
-			},
-			SATCollider(vec![
-				Vec2::new(10., 119.5),
-				Vec2::new(15., 119.5),
-				Vec2::new(50., -119.5),
-				Vec2::new(-50., -119.5),
-			]),
-		));
+		let mut spawn_top = |x : f32, y : f32, z : f32, sprite : &str| {
+			commands.spawn((
+				SpriteSheetBundle {
+					texture_atlas: sprite_sheet.handle.clone(),
+					sprite: sprite_sheet.get(sprite),
+					transform: Transform::from_xyz(x, 119.5 + top_y + y, Z_OBSTACLE + z),
+					..default()
+				},
+				SATCollider(vec![
+					Vec2::new(-50., 119.5),
+					Vec2::new(50., 119.5),
+					Vec2::new(15., -119.5),
+					Vec2::new(10., -119.5),
+				]),
+			));
+		};
+		
+		spawn_top(
+			rng.gen_range(-10.0..=10.),
+			0.,
+			0.,
+			down.choose(&mut rng).unwrap(),
+		);
+		
+		// Down child before
+		if rng.gen_bool(0.3) {
+			spawn_top(
+				rng.gen_range(-80.0..=-60.),
+				rng.gen_range(50.0 ..= 100.),
+				0.1,
+				down.choose(&mut rng).unwrap(),
+			);
+		}
+		
+		// Down child after
+		if rng.gen_bool(0.3) {
+			spawn_top(
+				rng.gen_range(60.0..=80.),
+				rng.gen_range(50.0 ..= 100.),
+				0.2,
+				down.choose(&mut rng).unwrap(),
+			);
+		}
+		
+		// Up
+		// -------------------------------------------------------------------------
+		
+		let mut spawn_bottom = |x : f32, y : f32, z : f32, sprite : &str| {
+			commands.spawn((
+				SpriteSheetBundle {
+					texture_atlas: sprite_sheet.handle.clone(),
+					sprite: sprite_sheet.get(sprite),
+					transform: Transform::from_xyz(x, -(119.5 + bottom_y + y), Z_OBSTACLE + z),
+					..default()
+				},
+				SATCollider(vec![
+					Vec2::new(10., 119.5),
+					Vec2::new(15., 119.5),
+					Vec2::new(50., -119.5),
+					Vec2::new(-50., -119.5),
+				]),
+			));
+		};
+		
+		spawn_bottom(
+			rng.gen_range(-10.0..=10.),
+			0.,
+			0.,
+			up.choose(&mut rng).unwrap(),
+		);
+		
+		// Up child before
+		if rng.gen_bool(0.3) {
+			spawn_bottom(
+				rng.gen_range(-80.0..=-60.),
+				rng.gen_range(50.0 ..= 100.),
+				0.1,
+				up.choose(&mut rng).unwrap(),
+			);
+		}
+		
+		// Up child after
+		if rng.gen_bool(0.3) {
+			spawn_bottom(
+				rng.gen_range(60.0..=80.),
+				rng.gen_range(50.0 ..= 100.),
+				0.2,
+				up.choose(&mut rng).unwrap(),
+			);
+		}
 	});
 }

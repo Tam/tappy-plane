@@ -6,7 +6,7 @@ use rand::Rng;
 use crate::sprite_animation::{SpriteAnimationIndices, SpriteAnimationTimer};
 use crate::{AppState, SCREEN_HEIGHT};
 use crate::assets::SpriteSheet;
-use crate::transitions::{TransitionState, TransitionTo};
+use crate::transitions::TransitionTo;
 
 pub struct MenuPlugin;
 
@@ -115,15 +115,10 @@ fn menu_setup (
 fn menu_loop (
 	mouse : Res<Input<MouseButton>>,
 	touch : Res<Touches>,
-	mut to_state : ResMut<TransitionTo<AppState>>,
-	current_transition_state : Res<State<TransitionState>>,
-	mut transition_state: ResMut<NextState<TransitionState>>,
+	mut to_state : ResMut<TransitionTo>,
 ) {
-	if (mouse.just_pressed(MouseButton::Left) || touch.any_just_pressed())
-		&& current_transition_state.0.eq(&TransitionState::None)
-	{
+	if mouse.just_pressed(MouseButton::Left) || touch.any_just_pressed() {
 		to_state.0 = Some(AppState::Game);
-		transition_state.set(TransitionState::Start);
 	}
 }
 

@@ -8,7 +8,7 @@ use crate::{AppState, GAME_IN_ANIM_COMPLETE, GAME_OVER_ANIM_COMPLETE, GameState,
 use crate::assets::SpriteSheet;
 use crate::physics::{AABBCollider, Velocity};
 use crate::shaders::ScrollMaterial;
-use crate::transitions::{TransitionState, TransitionTo};
+use crate::transitions::TransitionTo;
 
 pub struct GamePlugin;
 
@@ -268,9 +268,7 @@ fn dead_loop (
 	touch : Res<Touches>,
 	mut can_restart : Local<bool>,
 	mut reader : EventReader<TweenCompleted>,
-	mut to_state : ResMut<TransitionTo<AppState>>,
-	mut transition_state: ResMut<NextState<TransitionState>>,
-	current_transition_state : Res<State<TransitionState>>,
+	mut to_state : ResMut<TransitionTo>,
 ) {
 	if let Ok(mut transform) = query.get_single_mut() {
 		transform.translation.x -= death_speed.0 * time.delta_seconds();
@@ -282,10 +280,7 @@ fn dead_loop (
 		}
 	}
 	
-	if *can_restart && (mouse.just_pressed(MouseButton::Left) || touch.any_just_pressed())
-		&& current_transition_state.0.eq(&TransitionState::None)
-	{
+	if *can_restart && (mouse.just_pressed(MouseButton::Left) || touch.any_just_pressed()) {
 		to_state.0 = Some(AppState::Menu);
-		transition_state.set(TransitionState::Start);
 	}
 }
