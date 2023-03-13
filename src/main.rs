@@ -34,10 +34,9 @@ const SCREEN_HEIGHT : f32 = 480.;
 
 const Z_BACKGROUND : f32 = 0.;
 const Z_OBSTACLE : f32 = 1.;
-// room for obsta-kids
-const Z_GROUND : f32 = 5.;
-const Z_PLANE : f32 = 6.;
-const Z_GAME_TEXT : f32 = 7.;
+const Z_GROUND : f32 = 2.5;
+const Z_PLANE : f32 = 3.;
+const Z_GAME_TEXT : f32 = 4.;
 const Z_TRANSITION : f32 = 100.;
 
 // Tween Events
