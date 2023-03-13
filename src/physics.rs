@@ -4,6 +4,7 @@ use crate::obstacle::ObstacleSpawner;
 use crate::scenes::{DeathSpeed, GroundSpeed};
 
 const GRAVITY : f32 = -800.;
+const UP_AMOUNT: f32 = 300.;
 
 pub struct PhysicsPlugin;
 
@@ -43,7 +44,7 @@ fn input (
 	touch : Res<Touches>,
 ) {
 	if mouse.just_pressed(MouseButton::Left) || touch.any_just_pressed() {
-		query.single_mut().0 = 400.;
+		query.single_mut().0 = UP_AMOUNT;
 	}
 }
 

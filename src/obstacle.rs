@@ -115,13 +115,10 @@ fn spawn(
 		ComputedVisibility::default(),
 		Obstacle,
 	)).with_children(|commands| {
-		let half_min = gap_min * 0.5;
-		let half_max = gap_max * 0.5;
+		let gap = rng.gen_range(gap_min ..= gap_max);
 		
-		// TODO: change this so the obstacles are placed a random dist apart, then shifted
-		//   up/down randomly by the remainder of the max height
-		let top_y = rng.gen_range(half_min..=half_max);
-		let bottom_y = rng.gen_range(half_min..=half_max);
+		let top_y = rng.gen_range(0. ..= gap);
+		let bottom_y = gap - top_y;
 		
 		commands.spawn((
 			SpriteSheetBundle {
