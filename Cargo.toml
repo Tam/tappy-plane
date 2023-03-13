@@ -21,6 +21,7 @@ features = [
     "bevy_sprite", 			# 2D (sprites) rendering
 
     "png",                  # PNG Assets
+    "vorbis",               # OGG Assets
 ]
 
 [features]

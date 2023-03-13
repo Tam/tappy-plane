@@ -87,7 +87,14 @@ fn main() {
 
 fn setup (
 	mut commands : Commands,
+	asset_server : Res<AssetServer>,
+	audio : Res<Audio>
 ) {
+	// Camera
 	commands.spawn(Camera2dBundle::default());
+	
+	// Bangin' tunes
+	let music = asset_server.load("audio/Bavarian Goat.ogg");
+	audio.play(music);
 }
 
