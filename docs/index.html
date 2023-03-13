@@ -11,16 +11,48 @@
 			justify-items: center;
 			height: 100%;
 			background: #131313;
+			font-family: system, -apple-system, ".SFNSText-Regular", "San Francisco", "Roboto", "Segoe UI", "Helvetica Neue", "Lucida Grande", sans-serif;
+		}
+		div {
+			margin: auto;
+			width: 100%;
+			max-width: 800px;
 		}
 		canvas {
 			margin: auto;
-			background-color: white;
+			background-color: #D9ECF6;
+			width: 100%;
+			aspect-ratio: 800 / 480;
+			vertical-align: middle;
+		}
+		footer {
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			margin-top: 10px;
+			font-size: 14px;
+		}
+		a {
+			color: #fff;
+			text-decoration: none;
+		}
+		a:first-child {
+			font-size: 16px;
 		}
 	</style>
 	<title>🚰✈️</title>
 </head>
+<body>
 <script type="module">
 	import init from './wasm/tappy-plane.js';
 	init();
 </script>
+<div>
+	<canvas id="canvas"></canvas>
+	<footer>
+		<a href="https://tam.games">🕹</a>
+		<a href="https://github.com/tam/tappy-plane">Source</a>
+	</footer>
+</div>
+</body>
 </html>

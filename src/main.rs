@@ -63,6 +63,7 @@ fn main() {
 			primary_window: Some(Window {
 				title: "Tappy Plane".into(),
 				resolution: (SCREEN_WIDTH, SCREEN_HEIGHT).into(),
+				canvas: Some("#canvas".into()),
 				..default()
 			}),
 			..default()
