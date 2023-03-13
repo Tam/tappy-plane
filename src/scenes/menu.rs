@@ -116,9 +116,12 @@ fn menu_loop (
 	mouse : Res<Input<MouseButton>>,
 	touch : Res<Touches>,
 	mut to_state : ResMut<TransitionTo<AppState>>,
+	current_transition_state : Res<State<TransitionState>>,
 	mut transition_state: ResMut<NextState<TransitionState>>,
 ) {
-	if mouse.just_pressed(MouseButton::Left) || touch.any_just_pressed() {
+	if (mouse.just_pressed(MouseButton::Left) || touch.any_just_pressed())
+		&& current_transition_state.0.eq(&TransitionState::None)
+	{
 		to_state.0 = Some(AppState::Game);
 		transition_state.set(TransitionState::Start);
 	}

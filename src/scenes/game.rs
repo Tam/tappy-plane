@@ -123,7 +123,7 @@ fn setup_game(
 				transform: Transform::from_xyz(0., (SCREEN_HEIGHT - 71.) / 2. * -1., Z_GROUND),
 				..default()
 			},
-			AABBCollider(Vec2::new(SCREEN_WIDTH, 30.), None),
+			AABBCollider(Vec2::new(SCREEN_WIDTH, 30.), Some(Vec2::new(0., -10.))),
 		));
 		
 		// Plane
@@ -270,6 +270,7 @@ fn dead_loop (
 	mut reader : EventReader<TweenCompleted>,
 	mut to_state : ResMut<TransitionTo<AppState>>,
 	mut transition_state: ResMut<NextState<TransitionState>>,
+	current_transition_state : Res<State<TransitionState>>,
 ) {
 	if let Ok(mut transform) = query.get_single_mut() {
 		transform.translation.x -= death_speed.0 * time.delta_seconds();
@@ -281,7 +282,9 @@ fn dead_loop (
 		}
 	}
 	
-	if *can_restart && mouse.just_pressed(MouseButton::Left) || touch.any_just_pressed() {
+	if *can_restart && (mouse.just_pressed(MouseButton::Left) || touch.any_just_pressed())
+		&& current_transition_state.0.eq(&TransitionState::None)
+	{
 		to_state.0 = Some(AppState::Menu);
 		transition_state.set(TransitionState::Start);
 	}
