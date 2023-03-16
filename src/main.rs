@@ -113,6 +113,6 @@ fn setup (
 	
 	// Bangin' tunes
 	let music = asset_server.load("audio/Bavarian Goat.ogg");
-	audio.play(music);
+	audio.play_with_settings(music, PlaybackSettings::LOOP);
 }
 

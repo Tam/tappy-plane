@@ -23,6 +23,7 @@ impl Plugin for GamePlugin {
 			
 			.add_system(animate_in.in_schedule(OnEnter(GameState::Enter)))
 			.add_system(handle_anim_event.in_set(OnUpdate(AppState::Game)))
+			.add_system(early_start.in_set(OnUpdate(GameState::Enter)))
 		
 			.add_system(dead_enter.in_schedule(OnEnter(GameState::Dead)))
 			.add_system(dead_loop.in_set(OnUpdate(GameState::Dead)))
@@ -44,6 +45,9 @@ pub struct DeathSpeed (pub f32);
 
 #[derive(Component)]
 pub struct GameRoot;
+
+#[derive(Component)]
+struct PlaneRoot;
 
 #[derive(Component)]
 struct Plane;
@@ -130,28 +134,46 @@ fn setup_game(
 		// -------------------------------------------------------------------------
 		
 		commands.spawn((
-			Plane,
-			SpriteSheetBundle {
-				texture_atlas: sprite_sheet.handle.clone(),
-				sprite: sprite_sheet.get("planeBlue1"),
-				transform: Transform::from_xyz(SCREEN_WIDTH * -0.2, 0., Z_PLANE),
-				..default()
-			},
-			SpriteAnimationIndices::new(vec![
-				sprite_sheet.get("planeBlue1").index,
-				sprite_sheet.get("planeBlue2").index,
-				sprite_sheet.get("planeBlue3").index,
-			]),
-			SpriteAnimationTimer(Timer::from_seconds(0.04, TimerMode::Repeating)),
-			Velocity::default(),
-			AABBCollider(
-				Vec2::new(80., 73.) * 0.6,
-				Some(Vec2::new(10., 0.)),
-			),
-		));
+			PlaneRoot,
+			Transform::from_xyz(SCREEN_WIDTH * -0.2, 0., Z_PLANE),
+			GlobalTransform::default(),
+			Visibility::default(),
+			ComputedVisibility::default(),
+		)).with_children(|commands| {
+			commands.spawn((
+				Plane,
+				SpriteSheetBundle {
+					texture_atlas: sprite_sheet.handle.clone(),
+					sprite: sprite_sheet.get("planeBlue1"),
+					transform: Transform::from_xyz(88. * -0.5, 73. * 0.5, 0.),
+					..default()
+				},
+				SpriteAnimationIndices::new(vec![
+					sprite_sheet.get("planeBlue1").index,
+					sprite_sheet.get("planeBlue2").index,
+					sprite_sheet.get("planeBlue3").index,
+				]),
+				SpriteAnimationTimer(Timer::from_seconds(0.04, TimerMode::Repeating)),
+				Velocity::default(),
+				AABBCollider(
+					Vec2::new(80., 73.) * 0.6,
+					Some(Vec2::new(10., 0.)),
+				),
+			));
+		});
 	});
 	
 	state.set(GameState::Enter);
+}
+
+fn early_start (
+	mut state : ResMut<NextState<GameState>>,
+	mouse : Res<Input<MouseButton>>,
+	touch : Res<Touches>,
+) {
+	if mouse.just_pressed(MouseButton::Left) || touch.any_just_pressed() {
+		state.set(GameState::Play)
+	}
 }
 
 // Animations
@@ -159,7 +181,7 @@ fn setup_game(
 
 fn animate_in (
 	mut commands : Commands,
-	mut query : Query<Entity, With<Plane>>,
+	mut query : Query<Entity, With<PlaneRoot>>,
 ) {
 	if let Ok(entity) = query.get_single_mut() {
 		let tween = Tween::new(
@@ -176,8 +198,8 @@ fn animate_in (
 }
 
 fn handle_anim_event (
-	mut state : ResMut<NextState<GameState>>,
 	mut reader: EventReader<TweenCompleted>,
+	mut state : ResMut<NextState<GameState>>,
 ) {
 	for event in reader.iter() {
 		match event.user_data {

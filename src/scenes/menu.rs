@@ -32,6 +32,9 @@ struct MenuRoot;
 fn menu_setup (
 	mut commands : Commands,
 	sprite_sheet : Res<SpriteSheet>,
+	
+	// mut mesh_assets : ResMut<Assets<Mesh>>,
+	// mut slice_material_assets : ResMut<Assets<SliceMaterial>>,
 ) {
 	commands.spawn((
 		MenuRoot,
@@ -41,6 +44,19 @@ fn menu_setup (
 		GlobalTransform::default(),
 	))
 	.with_children(|commands| {
+		
+		// 9-slice TEST
+		// commands.spawn(MaterialMesh2dBundle {
+		// 	mesh: mesh_assets.add(Mesh::from(shape::Quad::new(Vec2::new(300., 300.)))).into(),
+		// 	material: slice_material_assets.add(SliceMaterial {
+		// 		border: Vec4::splat(10.),
+		// 		rect: SliceMaterial::rect(0., 1320.4, 136., 80. - 0.4),
+		// 		texture: sprite_sheet.texture_handle.clone(),
+		// 	}),
+		// 	..default()
+		// });
+		
+		
 		let mut rng = rand::thread_rng();
 		
 		let mut spawn = |o : f32, l : char| {

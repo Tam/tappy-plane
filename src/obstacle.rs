@@ -6,7 +6,7 @@ use crate::physics::SATCollider;
 use crate::{AppState, GameState, SCREEN_WIDTH, Z_OBSTACLE};
 use crate::scenes::GameRoot;
 
-const SPAWN_OFFSET : f32 = SCREEN_WIDTH * 0.5 + 200.;
+const SPAWN_OFFSET : f32 = SCREEN_WIDTH * 0.5 + 100.;
 const NEG_SPAWN_OFFSET : f32 = SCREEN_WIDTH * -0.5 - 200.;
 
 pub struct ObstaclePlugin;
@@ -59,11 +59,13 @@ pub fn spawn_obstacle (
 	root_query : Query<Entity, With<GameRoot>>,
 	time : Res<Time>,
 	mut spawner : ResMut<ObstacleSpawner>,
+	mut has_run : Local<bool>,
 ) {
 	let root = root_query.single();
 	spawner.timer.tick(time.delta());
 	
-	if spawner.timer.just_finished() {
+	if spawner.timer.just_finished() || !*has_run {
+		*has_run = true;
 		commands.entity(root).with_children(|commands| {
 			spawn(
 				commands,
@@ -151,9 +153,9 @@ fn spawn(
 		);
 		
 		// Down child before
-		if rng.gen_bool(0.3) {
+		if rng.gen_bool(0.45) {
 			spawn_top(
-				rng.gen_range(-80.0..=-60.),
+				rng.gen_range(-80.0..=-30.),
 				rng.gen_range(50.0 ..= 100.),
 				0.1,
 				down.choose(&mut rng).unwrap(),
@@ -161,9 +163,9 @@ fn spawn(
 		}
 		
 		// Down child after
-		if rng.gen_bool(0.3) {
+		if rng.gen_bool(0.45) {
 			spawn_top(
-				rng.gen_range(60.0..=80.),
+				rng.gen_range(30.0..=80.),
 				rng.gen_range(50.0 ..= 100.),
 				0.2,
 				down.choose(&mut rng).unwrap(),
@@ -198,9 +200,9 @@ fn spawn(
 		);
 		
 		// Up child before
-		if rng.gen_bool(0.3) {
+		if rng.gen_bool(0.45) {
 			spawn_bottom(
-				rng.gen_range(-80.0..=-60.),
+				rng.gen_range(-80.0..=-30.),
 				rng.gen_range(50.0 ..= 100.),
 				0.1,
 				up.choose(&mut rng).unwrap(),
@@ -208,9 +210,9 @@ fn spawn(
 		}
 		
 		// Up child after
-		if rng.gen_bool(0.3) {
+		if rng.gen_bool(0.45) {
 			spawn_bottom(
-				rng.gen_range(60.0..=80.),
+				rng.gen_range(30.0..=80.),
 				rng.gen_range(50.0 ..= 100.),
 				0.2,
 				up.choose(&mut rng).unwrap(),
