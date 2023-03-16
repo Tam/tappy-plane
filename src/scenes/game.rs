@@ -4,7 +4,7 @@ use bevy::sprite::MaterialMesh2dBundle;
 use bevy_tweening::{Animator, Delay, EaseFunction, Tween, TweenCompleted};
 use bevy_tweening::lens::TransformPositionLens;
 use crate::sprite_animation::{SpriteAnimationIndices, SpriteAnimationTimer};
-use crate::{AppState, GAME_IN_ANIM_COMPLETE, GAME_OVER_ANIM_COMPLETE, GameState, SCREEN_HEIGHT, SCREEN_WIDTH, Z_BACKGROUND, Z_GAME_TEXT, Z_GROUND, Z_PLANE};
+use crate::{AppState, GAME_IN_ANIM_COMPLETE, GAME_OVER_ANIM_COMPLETE, GameState, Level, SCREEN_HEIGHT, SCREEN_WIDTH, Z_BACKGROUND, Z_GAME_TEXT, Z_GROUND, Z_PLANE};
 use crate::assets::SpriteSheet;
 use crate::physics::{AABBCollider, Velocity};
 use crate::shaders::ScrollMaterial;
@@ -172,7 +172,7 @@ fn early_start (
 	touch : Res<Touches>,
 ) {
 	if mouse.just_pressed(MouseButton::Left) || touch.any_just_pressed() {
-		state.set(GameState::Play)
+		state.set(GameState::Play);
 	}
 }
 
@@ -217,6 +217,7 @@ fn teardown_game (
 	mut commands : Commands,
 	query : Query<Entity, With<GameRoot>>,
 	mut state : ResMut<NextState<GameState>>,
+	mut level : ResMut<Level>,
 ) {
 	// Remove all entities
 	for entity in &query {
@@ -225,6 +226,9 @@ fn teardown_game (
 	
 	// Reset game state
 	state.set(GameState::default());
+	
+	// Reset spawn timer
+	level.spawner.timer.reset();
 }
 
 // Dead

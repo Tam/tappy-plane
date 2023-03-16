@@ -3,7 +3,7 @@ use rand::Rng;
 use rand::seq::SliceRandom;
 use crate::assets::SpriteSheet;
 use crate::physics::SATCollider;
-use crate::{AppState, GameState, SCREEN_WIDTH, Z_OBSTACLE};
+use crate::{AppState, GameState, Level, SCREEN_WIDTH, Z_OBSTACLE};
 use crate::scenes::GameRoot;
 
 const SPAWN_OFFSET : f32 = SCREEN_WIDTH * 0.5 + 100.;
@@ -14,12 +14,6 @@ pub struct ObstaclePlugin;
 impl Plugin for ObstaclePlugin {
 	fn build(&self, app: &mut App) {
 		app
-			.insert_resource(ObstacleSpawner {
-				speed: 150.,
-				timer: Timer::from_seconds(2., TimerMode::Repeating),
-				gap_min: 150.,
-				gap_max: 200.,
-			})
 			.add_systems((
 				move_obstacle,
 				despawn_obstacle,
@@ -36,10 +30,9 @@ impl Plugin for ObstaclePlugin {
 // Resources
 // =========================================================================
 
-#[derive(Resource)]
 pub struct ObstacleSpawner {
 	pub speed : f32,
-	pub timer : Timer,
+	pub timer : Timer, // TODO: Move timer out of spawner into own resource, replace with seconds value in spawner
 	pub gap_min : f32,
 	pub gap_max : f32,
 }
@@ -58,9 +51,10 @@ pub fn spawn_obstacle (
 	sprite_sheet : Res<SpriteSheet>,
 	root_query : Query<Entity, With<GameRoot>>,
 	time : Res<Time>,
-	mut spawner : ResMut<ObstacleSpawner>,
+	mut level : ResMut<Level>,
 	mut has_run : Local<bool>,
 ) {
+	let spawner = &mut level.spawner;
 	let root = root_query.single();
 	spawner.timer.tick(time.delta());
 	
@@ -81,8 +75,10 @@ pub fn spawn_obstacle (
 pub fn move_obstacle (
 	mut query : Query<&mut Transform, With<Obstacle>>,
 	time : Res<Time>,
-	spawner : Res<ObstacleSpawner>,
+	level : Res<Level>,
 ) {
+	let spawner = &level.spawner;
+	
 	for mut transform in &mut query {
 		transform.translation.x -= spawner.speed * time.delta_seconds();
 	}

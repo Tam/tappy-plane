@@ -13,7 +13,7 @@ use bevy_tweening::TweeningPlugin;
 use crate::assets::AssetsPlugin;
 #[cfg(feature = "debug")]
 use crate::debug::DebugPlugin;
-use crate::obstacle::ObstaclePlugin;
+use crate::obstacle::{ObstaclePlugin, ObstacleSpawner};
 use crate::physics::PhysicsPlugin;
 use crate::scenes::ScenesPlugin;
 use crate::shaders::ShadersPlugin;
@@ -67,6 +67,22 @@ pub enum GameState {
 	Dead,
 }
 
+// Structs
+// =========================================================================
+
+pub enum LevelTheme {
+	Grass,
+	Stone,
+	Snow,
+}
+
+#[derive(Resource)]
+pub struct Level {
+	pub theme    : LevelTheme,
+	pub distance : f32, // Distance the player needs to travel to "complete" the level
+	pub spawner  : ObstacleSpawner,
+}
+
 // Game
 // =========================================================================
 
@@ -74,6 +90,16 @@ fn main() {
 	let mut app = App::new();
 	
 	app
+		.insert_resource(Level {
+			theme: LevelTheme::Grass,
+			distance: 100.,
+			spawner: ObstacleSpawner {
+				speed: 150.,
+				timer: Timer::from_seconds(2., TimerMode::Repeating),
+				gap_min: 150.,
+				gap_max: 200.,
+			},
+		})
 		.add_state::<AppState>()
 		.add_state::<GameState>()
 		.insert_resource(ClearColor(Color::hex("#D9ECF6").unwrap()))

@@ -1,6 +1,5 @@
 use bevy::prelude::*;
-use crate::{AppState, GameState};
-use crate::obstacle::ObstacleSpawner;
+use crate::{AppState, GameState, Level};
 use crate::scenes::{DeathSpeed, GroundSpeed};
 
 const GRAVITY : f32 = -800.;
@@ -67,11 +66,12 @@ fn resolve_collisions (
 	mut player_query : Query<(&GlobalTransform, &AABBCollider), With<Velocity>>,
 	aabb_collider_query : Query<(&GlobalTransform, &AABBCollider), Without<Velocity>>,
 	sat_collider_query : Query<(&GlobalTransform, &SATCollider), Without<Velocity>>,
-	spawner : Res<ObstacleSpawner>,
+	level : Res<Level>,
 	ground_speed : Res<GroundSpeed>,
 	mut state : ResMut<NextState<GameState>>,
 	mut death_speed : ResMut<DeathSpeed>,
 ) {
+	let spawner = &level.spawner;
 	let (
 		player_transform,
 		player_collider,
