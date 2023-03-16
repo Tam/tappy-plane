@@ -18,9 +18,7 @@ echo Clear previous build
 rm -rf docs/wasm docs/assets
 
 echo Build rust wasm binary
-start_spinner
 cargo build --profile wasm-release --target wasm32-unknown-unknown
-stop_spinner
 
 echo Bind wasm
 start_spinner
