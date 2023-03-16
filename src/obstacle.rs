@@ -3,7 +3,7 @@ use rand::Rng;
 use rand::seq::SliceRandom;
 use crate::assets::SpriteSheet;
 use crate::physics::SATCollider;
-use crate::{AppState, GameState, Level, SCREEN_WIDTH, Z_OBSTACLE};
+use crate::{AppState, GameState, Level, SCREEN_WIDTH, z};
 use crate::scenes::GameRoot;
 
 const SPAWN_OFFSET : f32 = SCREEN_WIDTH * 0.5 + 100.;
@@ -110,7 +110,7 @@ fn spawn(
 	let up = vec!["rock", "rockGrass"];
 	
 	commands.spawn((
-		Transform::from_xyz(start_x, 0., Z_OBSTACLE),
+		Transform::from_xyz(start_x, 0., z::OBSTACLE),
 		GlobalTransform::default(),
 		Visibility::default(),
 		ComputedVisibility::default(),
@@ -129,7 +129,7 @@ fn spawn(
 				SpriteSheetBundle {
 					texture_atlas: sprite_sheet.handle.clone(),
 					sprite: sprite_sheet.get(sprite),
-					transform: Transform::from_xyz(x, 119.5 + top_y + y, Z_OBSTACLE + z),
+					transform: Transform::from_xyz(x, 119.5 + top_y + y, z::OBSTACLE + z),
 					..default()
 				},
 				SATCollider(vec![
@@ -176,7 +176,7 @@ fn spawn(
 				SpriteSheetBundle {
 					texture_atlas: sprite_sheet.handle.clone(),
 					sprite: sprite_sheet.get(sprite),
-					transform: Transform::from_xyz(x, -(119.5 + bottom_y + y), Z_OBSTACLE + z),
+					transform: Transform::from_xyz(x, -(119.5 + bottom_y + y), z::OBSTACLE + z),
 					..default()
 				},
 				SATCollider(vec![

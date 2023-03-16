@@ -4,7 +4,7 @@ use bevy::sprite::MaterialMesh2dBundle;
 use bevy_tweening::{Animator, Delay, EaseFunction, Tween, TweenCompleted};
 use bevy_tweening::lens::TransformPositionLens;
 use crate::sprite_animation::{SpriteAnimationIndices, SpriteAnimationTimer};
-use crate::{AppState, GAME_IN_ANIM_COMPLETE, GAME_OVER_ANIM_COMPLETE, GameState, Level, SCREEN_HEIGHT, SCREEN_WIDTH, Z_BACKGROUND, Z_GAME_TEXT, Z_GROUND, Z_PLANE};
+use crate::{AppState, GAME_IN_ANIM_COMPLETE, GAME_OVER_ANIM_COMPLETE, GameState, Level, SCREEN_HEIGHT, SCREEN_WIDTH, z};
 use crate::assets::SpriteSheet;
 use crate::physics::{AABBCollider, Velocity};
 use crate::shaders::ScrollMaterial;
@@ -87,7 +87,7 @@ fn setup_game(
 				rect: ScrollMaterial::rect(0., 355., 800. - 0.4, top_slice),
 				texture: sprite_sheet.texture_handle.clone(),
 			}),
-			transform: Transform::from_xyz(0., (SCREEN_HEIGHT - top_slice) * 0.5, Z_BACKGROUND),
+			transform: Transform::from_xyz(0., (SCREEN_HEIGHT - top_slice) * 0.5, z::BACKGROUND),
 			..default()
 		});
 		
@@ -100,7 +100,7 @@ fn setup_game(
 				rect: ScrollMaterial::rect(0., 355. + top_slice, 800. - 0.4, 480. - top_slice),
 				texture: sprite_sheet.texture_handle.clone(),
 			}),
-			transform: Transform::from_xyz(0., top_slice * -0.5, Z_BACKGROUND),
+			transform: Transform::from_xyz(0., top_slice * -0.5, z::BACKGROUND),
 			..default()
 		});
 		
@@ -124,7 +124,7 @@ fn setup_game(
 					rect: ScrollMaterial::rect(0., 142.3, 808. - 0.4, 71.),
 					texture: sprite_sheet.texture_handle.clone(),
 				}),
-				transform: Transform::from_xyz(0., (SCREEN_HEIGHT - 71.) / 2. * -1., Z_GROUND),
+				transform: Transform::from_xyz(0., (SCREEN_HEIGHT - 71.) / 2. * -1., z::GROUND),
 				..default()
 			},
 			AABBCollider(Vec2::new(SCREEN_WIDTH, 30.), Some(Vec2::new(0., -10.))),
@@ -135,7 +135,7 @@ fn setup_game(
 		
 		commands.spawn((
 			PlaneRoot,
-			Transform::from_xyz(SCREEN_WIDTH * -0.2, 0., Z_PLANE),
+			Transform::from_xyz(SCREEN_WIDTH * -0.2, 0., z::PLANE),
 			GlobalTransform::default(),
 			Visibility::default(),
 			ComputedVisibility::default(),
@@ -188,8 +188,8 @@ fn animate_in (
 			EaseFunction::QuarticOut,
 			Duration::from_secs(2),
 			TransformPositionLens {
-				start: Vec3::new(SCREEN_WIDTH * -0.8, 200., Z_PLANE),
-				end: Vec3::new(SCREEN_WIDTH * -0.2, 0., Z_PLANE),
+				start: Vec3::new(SCREEN_WIDTH * -0.8, 200., z::PLANE),
+				end: Vec3::new(SCREEN_WIDTH * -0.2, 0., z::PLANE),
 			},
 		).with_completed_event(GAME_IN_ANIM_COMPLETE);
 		
@@ -253,8 +253,8 @@ fn dead_enter (
 				EaseFunction::QuarticOut,
 				Duration::from_secs(1),
 				TransformPositionLens {
-					start: Vec3::new(0., SCREEN_HEIGHT * 0.5, Z_GAME_TEXT),
-					end: Vec3::new(0., 30., Z_GAME_TEXT),
+					start: Vec3::new(0., SCREEN_HEIGHT * 0.5, z::GAME_TEXT),
+					end: Vec3::new(0., 30., z::GAME_TEXT),
 				},
 			).with_completed_event(GAME_OVER_ANIM_COMPLETE)),
 		));
@@ -276,8 +276,8 @@ fn dead_enter (
 					EaseFunction::QuarticOut,
 					Duration::from_secs(1),
 					TransformPositionLens {
-						start: Vec3::new(0., SCREEN_HEIGHT * -0.5, Z_GAME_TEXT),
-						end: Vec3::new(0., -50., Z_GAME_TEXT),
+						start: Vec3::new(0., SCREEN_HEIGHT * -0.5, z::GAME_TEXT),
+						end: Vec3::new(0., -50., z::GAME_TEXT),
 					},
 				)),
 			),

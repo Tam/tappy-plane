@@ -26,26 +26,28 @@ use crate::transitions::TransitionsPlugin;
 // Screen size
 // -------------------------------------------------------------------------
 
-const SCREEN_WIDTH : f32 = 800.;
+const SCREEN_WIDTH  : f32 = 800.;
 const SCREEN_HEIGHT : f32 = 480.;
 
 // Z-indexes
 // -------------------------------------------------------------------------
 
-const Z_BACKGROUND : f32 = 0.;
-const Z_OBSTACLE : f32 = 1.;
-const Z_GROUND : f32 = 2.5;
-const Z_PLANE : f32 = 3.;
-const Z_GAME_TEXT : f32 = 4.;
-const Z_TRANSITION : f32 = 100.;
+pub mod z {
+	pub const BACKGROUND : f32 = 0.;
+	pub const OBSTACLE   : f32 = 1.;
+	pub const GROUND     : f32 = 2.5;
+	pub const PLANE      : f32 = 3.;
+	pub const GAME_TEXT  : f32 = 4.;
+	pub const TRANSITION : f32 = 100.;
+}
 
 // Tween Events
 // -------------------------------------------------------------------------
 
-const GAME_IN_ANIM_COMPLETE : u64 = 1;
-const GAME_OVER_ANIM_COMPLETE : u64 = 2;
+const GAME_IN_ANIM_COMPLETE     : u64 = 1;
+const GAME_OVER_ANIM_COMPLETE   : u64 = 2;
 const TRANSITION_START_COMPLETE : u64 = 3;
-const TRANSITION_END_COMPLETE : u64 = 4;
+const TRANSITION_END_COMPLETE   : u64 = 4;
 
 // States
 // =========================================================================

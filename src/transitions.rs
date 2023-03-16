@@ -2,7 +2,7 @@ use std::time::Duration;
 use bevy::prelude::*;
 use bevy_tweening::{Animator, EaseFunction, Tween, TweenCompleted};
 use bevy_tweening::lens::TransformPositionLens;
-use crate::{AppState, SCREEN_HEIGHT, SCREEN_WIDTH, TRANSITION_END_COMPLETE, TRANSITION_START_COMPLETE, Z_TRANSITION};
+use crate::{AppState, SCREEN_HEIGHT, SCREEN_WIDTH, TRANSITION_END_COMPLETE, TRANSITION_START_COMPLETE, z};
 
 pub struct TransitionsPlugin;
 
@@ -57,7 +57,7 @@ fn transition_watcher (
 fn transition_start (
 	mut commands : Commands,
 ) {
-	let start_pos = Vec3::new(-SCREEN_WIDTH, 5., Z_TRANSITION);
+	let start_pos = Vec3::new(-SCREEN_WIDTH, 5., z::TRANSITION);
 	
 	commands.spawn((
 		TransitionOverlay,
@@ -75,7 +75,7 @@ fn transition_start (
 			Duration::from_secs(1),
 			TransformPositionLens {
 				start: start_pos,
-				end: Vec3::new(0., 5., Z_TRANSITION),
+				end: Vec3::new(0., 5., z::TRANSITION),
 			}
 		).with_completed_event(TRANSITION_START_COMPLETE)),
 	));
@@ -122,7 +122,7 @@ fn transition_end (
 			Duration::from_secs(1),
 			TransformPositionLens {
 				start: Vec3::Y * 5.,
-				end: Vec3::new(SCREEN_WIDTH, 5., Z_TRANSITION),
+				end: Vec3::new(SCREEN_WIDTH, 5., z::TRANSITION),
 			}
 		).with_completed_event(TRANSITION_END_COMPLETE)));
 	}
