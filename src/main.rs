@@ -32,7 +32,7 @@ const SCREEN_HEIGHT : f32 = 480.;
 // Z-indexes
 // -------------------------------------------------------------------------
 
-pub mod z {
+mod z {
 	pub const BACKGROUND : f32 = 0.;
 	pub const OBSTACLE   : f32 = 1.;
 	pub const GROUND     : f32 = 2.5;
