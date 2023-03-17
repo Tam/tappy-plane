@@ -72,10 +72,11 @@ pub enum GameState {
 // Structs
 // =========================================================================
 
+#[derive(Copy, Clone)]
 pub enum LevelTheme {
 	Grass,
-	Stone,
 	Snow,
+	Ice,
 }
 
 #[derive(Resource)]
@@ -97,7 +98,7 @@ fn main() {
 			distance: 100.,
 			spawner: ObstacleSpawner {
 				speed: 150.,
-				timer: Timer::from_seconds(2., TimerMode::Repeating),
+				interval: 2.,
 				gap_min: 150.,
 				gap_max: 200.,
 			},

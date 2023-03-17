@@ -4,8 +4,9 @@ use bevy::sprite::MaterialMesh2dBundle;
 use bevy_tweening::{Animator, Delay, EaseFunction, Tween, TweenCompleted};
 use bevy_tweening::lens::TransformPositionLens;
 use crate::sprite_animation::{SpriteAnimationIndices, SpriteAnimationTimer};
-use crate::{AppState, GAME_IN_ANIM_COMPLETE, GAME_OVER_ANIM_COMPLETE, GameState, Level, SCREEN_HEIGHT, SCREEN_WIDTH, z};
+use crate::{AppState, GAME_IN_ANIM_COMPLETE, GAME_OVER_ANIM_COMPLETE, GameState, Level, LevelTheme, SCREEN_HEIGHT, SCREEN_WIDTH, z};
 use crate::assets::SpriteSheet;
+use crate::obstacle::SpawnTimer;
 use crate::physics::{AABBCollider, Velocity};
 use crate::shaders::ScrollMaterial;
 use crate::transitions::TransitionTo;
@@ -65,7 +66,13 @@ fn setup_game(
 	mut scroll_material_assets : ResMut<Assets<ScrollMaterial>>,
 	mut state : ResMut<NextState<GameState>>,
 	ground_speed : Res<GroundSpeed>,
+	level : Res<Level>,
+	mut timer : ResMut<SpawnTimer>,
 ) {
+	// Setup timer
+	timer.0.set_duration(Duration::from_secs_f32(level.spawner.interval));
+	
+	let theme = level.theme;
 	commands.spawn((
 		GameRoot,
 		Transform::default(),
@@ -116,12 +123,18 @@ fn setup_game(
 		// Ground
 		// -------------------------------------------------------------------------
 		
+		let ground_y = match theme {
+			LevelTheme::Grass => 142.3,
+			LevelTheme::Snow => 213.,
+			LevelTheme::Ice => 71.,
+		};
+		
 		commands.spawn((
 			MaterialMesh2dBundle {
 				mesh: mesh_assets.add(Mesh::from(shape::Quad::new(Vec2::new(SCREEN_WIDTH, 71.)))).into(),
 				material: scroll_material_assets.add(ScrollMaterial {
 					scroll_speed: ground_speed.0 * 0.001,
-					rect: ScrollMaterial::rect(0., 142.3, 808. - 0.4, 71.),
+					rect: ScrollMaterial::rect(0., ground_y, 808. - 0.4, 71.),
 					texture: sprite_sheet.texture_handle.clone(),
 				}),
 				transform: Transform::from_xyz(0., (SCREEN_HEIGHT - 71.) / 2. * -1., z::GROUND),
@@ -217,7 +230,7 @@ fn teardown_game (
 	mut commands : Commands,
 	query : Query<Entity, With<GameRoot>>,
 	mut state : ResMut<NextState<GameState>>,
-	mut level : ResMut<Level>,
+	mut timer : ResMut<SpawnTimer>,
 ) {
 	// Remove all entities
 	for entity in &query {
@@ -228,7 +241,7 @@ fn teardown_game (
 	state.set(GameState::default());
 	
 	// Reset spawn timer
-	level.spawner.timer.reset();
+	timer.0.reset();
 }
 
 // Dead
@@ -285,7 +298,6 @@ fn dead_enter (
 	});
 }
 
-#[allow(clippy::too_many_arguments)]
 fn dead_loop (
 	mut query : Query<&mut Transform, With<Plane>>,
 	death_speed : Res<DeathSpeed>,

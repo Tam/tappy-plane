@@ -1,12 +1,13 @@
+use std::time::Duration;
 use bevy::prelude::*;
 use rand::Rng;
 use rand::seq::SliceRandom;
 use crate::assets::SpriteSheet;
 use crate::physics::SATCollider;
-use crate::{AppState, GameState, Level, SCREEN_WIDTH, z};
+use crate::{AppState, GameState, Level, LevelTheme, SCREEN_WIDTH, z};
 use crate::scenes::GameRoot;
 
-const SPAWN_OFFSET : f32 = SCREEN_WIDTH * 0.5 + 100.;
+const SPAWN_OFFSET     : f32 = SCREEN_WIDTH * 0.5 + 100.;
 const NEG_SPAWN_OFFSET : f32 = SCREEN_WIDTH * -0.5 - 200.;
 
 pub struct ObstaclePlugin;
@@ -14,6 +15,9 @@ pub struct ObstaclePlugin;
 impl Plugin for ObstaclePlugin {
 	fn build(&self, app: &mut App) {
 		app
+			.insert_resource(
+				SpawnTimer(Timer::new(Duration::default(), TimerMode::Repeating))
+			)
 			.add_systems((
 				move_obstacle,
 				despawn_obstacle,
@@ -30,11 +34,14 @@ impl Plugin for ObstaclePlugin {
 // Resources
 // =========================================================================
 
+#[derive(Resource)]
+pub struct SpawnTimer (pub Timer);
+
 pub struct ObstacleSpawner {
-	pub speed : f32,
-	pub timer : Timer, // TODO: Move timer out of spawner into own resource, replace with seconds value in spawner
-	pub gap_min : f32,
-	pub gap_max : f32,
+	pub speed    : f32,
+	pub interval : f32,
+	pub gap_min  : f32,
+	pub gap_max  : f32,
 }
 
 // Components
@@ -52,13 +59,15 @@ pub fn spawn_obstacle (
 	root_query : Query<Entity, With<GameRoot>>,
 	time : Res<Time>,
 	mut level : ResMut<Level>,
+	mut timer : ResMut<SpawnTimer>,
 	mut has_run : Local<bool>,
 ) {
+	let theme = level.theme;
 	let spawner = &mut level.spawner;
 	let root = root_query.single();
-	spawner.timer.tick(time.delta());
+	timer.0.tick(time.delta());
 	
-	if spawner.timer.just_finished() || !*has_run {
+	if timer.0.just_finished() || !*has_run {
 		*has_run = true;
 		commands.entity(root).with_children(|commands| {
 			spawn(
@@ -67,6 +76,7 @@ pub fn spawn_obstacle (
 				SPAWN_OFFSET,
 				spawner.gap_min,
 				spawner.gap_max,
+				theme,
 			);
 		});
 	}
@@ -104,10 +114,16 @@ fn spawn(
 	start_x : f32,
 	gap_min : f32,
 	gap_max : f32,
+	theme   : LevelTheme,
 ) {
 	let mut rng = rand::thread_rng();
-	let down = vec!["rockDown", "rockGrassDown"];
-	let up = vec!["rock", "rockGrass"];
+	
+	// TODO: Add weighted random to sprite selection
+	let (up, down) = match theme {
+		LevelTheme::Grass => (vec!["rock", "rockGrass"], vec!["rockDown", "rockGrassDown"]),
+		LevelTheme::Snow => (vec!["rockSnow"], vec!["rockSnowDown"]),
+		LevelTheme::Ice => (vec!["rockIce"], vec!["rockIceDown"]),
+	};
 	
 	commands.spawn((
 		Transform::from_xyz(start_x, 0., z::OBSTACLE),
