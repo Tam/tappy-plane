@@ -77,7 +77,7 @@ fn setup_game(
 	mut mesh_assets : ResMut<Assets<Mesh>>,
 	mut scroll_material_assets : ResMut<Assets<ScrollMaterial>>,
 	mut state : ResMut<NextState<GameState>>,
-	ground_speed : Res<GroundSpeed>,
+	mut ground_speed : ResMut<GroundSpeed>,
 	level : Res<Level>,
 	mut timer : ResMut<SpawnTimer>,
 	mut death_speed : ResMut<DeathSpeed>,
@@ -89,6 +89,10 @@ fn setup_game(
 	
 	// Setup timer
 	timer.0.set_duration(Duration::from_secs_f32(level.spawner.interval));
+	
+	// Ground speed
+	let computed_ground_speed = 300. + level.spawner.speed;
+	ground_speed.0 = computed_ground_speed;
 	
 	let theme = level.theme;
 	commands.spawn((
@@ -151,7 +155,7 @@ fn setup_game(
 			MaterialMesh2dBundle {
 				mesh: mesh_assets.add(Mesh::from(shape::Quad::new(Vec2::new(SCREEN_WIDTH, 71.)))).into(),
 				material: scroll_material_assets.add(ScrollMaterial {
-					scroll_speed: ground_speed.0 * 0.001,
+					scroll_speed: computed_ground_speed * 0.001,
 					rect: ScrollMaterial::rect(0., ground_y, 808. - 0.4, 71.),
 					texture: sprite_sheet.texture_handle.clone(),
 				}),
