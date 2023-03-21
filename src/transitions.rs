@@ -121,7 +121,7 @@ fn transition_end (
 			EaseFunction::CircularOut,
 			Duration::from_secs(1),
 			TransformPositionLens {
-				start: Vec3::Y * 5.,
+				start: Vec3::new(0., 5., z::TRANSITION),
 				end: Vec3::new(SCREEN_WIDTH, 5., z::TRANSITION),
 			}
 		).with_completed_event(TRANSITION_END_COMPLETE)));

@@ -38,6 +38,7 @@ mod z {
 	pub const GROUND     : f32 = 2.5;
 	pub const PLANE      : f32 = 3.;
 	pub const GAME_TEXT  : f32 = 4.;
+	pub const UI         : f32 = 50.;
 	pub const TRANSITION : f32 = 100.;
 }
 
@@ -45,9 +46,10 @@ mod z {
 // -------------------------------------------------------------------------
 
 const GAME_IN_ANIM_COMPLETE     : u64 = 1;
-const GAME_OVER_ANIM_COMPLETE   : u64 = 2;
-const TRANSITION_START_COMPLETE : u64 = 3;
-const TRANSITION_END_COMPLETE   : u64 = 4;
+const GAME_OUT_ANIM_COMPLETE    : u64 = 2;
+const GAME_OVER_ANIM_COMPLETE   : u64 = 3;
+const TRANSITION_START_COMPLETE : u64 = 4;
+const TRANSITION_END_COMPLETE   : u64 = 5;
 
 // States
 // =========================================================================
@@ -95,7 +97,7 @@ fn main() {
 	app
 		.insert_resource(Level {
 			theme: LevelTheme::Grass,
-			distance: 100.,
+			distance: 250.,
 			spawner: ObstacleSpawner {
 				speed: 150.,
 				interval: 2.,

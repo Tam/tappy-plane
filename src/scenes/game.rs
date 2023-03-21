@@ -1,10 +1,10 @@
 use std::time::Duration;
 use bevy::prelude::*;
 use bevy::sprite::MaterialMesh2dBundle;
-use bevy_tweening::{Animator, Delay, EaseFunction, Tween, TweenCompleted};
-use bevy_tweening::lens::TransformPositionLens;
+use bevy_tweening::{Animator, Delay, EaseFunction, Tracks, Tween, TweenCompleted};
+use bevy_tweening::lens::{TransformPositionLens, TransformScaleLens};
 use crate::sprite_animation::{SpriteAnimationIndices, SpriteAnimationTimer};
-use crate::{AppState, GAME_IN_ANIM_COMPLETE, GAME_OVER_ANIM_COMPLETE, GameState, Level, LevelTheme, SCREEN_HEIGHT, SCREEN_WIDTH, z};
+use crate::{AppState, GAME_IN_ANIM_COMPLETE, GAME_OUT_ANIM_COMPLETE, GAME_OVER_ANIM_COMPLETE, GameState, Level, LevelTheme, SCREEN_HEIGHT, SCREEN_WIDTH, z};
 use crate::assets::SpriteSheet;
 use crate::obstacle::SpawnTimer;
 use crate::physics::{AABBCollider, Velocity};
@@ -18,19 +18,25 @@ impl Plugin for GamePlugin {
 		app
 			.insert_resource(GroundSpeed(300.))
 			.insert_resource(DeathSpeed(0.))
+			.insert_resource(DistanceTravelled(0.))
 			
 			.add_system(setup_game.in_schedule(OnEnter(AppState::Game)))
 			.add_system(teardown_game.in_schedule(OnExit(AppState::Game)))
 			
 			.add_system(animate_in.in_schedule(OnEnter(GameState::Enter)))
 			.add_system(handle_anim_event.in_set(OnUpdate(AppState::Game)))
+			.add_system(animate_out.in_schedule(OnEnter(GameState::Exit)))
+			
 			.add_system(early_start.in_set(OnUpdate(GameState::Enter)))
+			.add_system(travel.in_set(OnUpdate(GameState::Play)))
 		
 			.add_system(dead_enter.in_schedule(OnEnter(GameState::Dead)))
 			.add_system(dead_loop.in_set(OnUpdate(GameState::Dead)))
 		;
 	}
 }
+
+const DIST_PER_SECOND : f32 = 30.;
 
 // Resources
 // =========================================================================
@@ -40,6 +46,9 @@ pub struct GroundSpeed (pub f32);
 
 #[derive(Resource)]
 pub struct DeathSpeed (pub f32);
+
+#[derive(Resource)]
+pub struct DistanceTravelled (pub f32);
 
 // Components
 // =========================================================================
@@ -52,6 +61,9 @@ struct PlaneRoot;
 
 #[derive(Component)]
 struct Plane;
+
+#[derive(Component)]
+struct ProgressBar;
 
 // Systems
 // =========================================================================
@@ -68,7 +80,13 @@ fn setup_game(
 	ground_speed : Res<GroundSpeed>,
 	level : Res<Level>,
 	mut timer : ResMut<SpawnTimer>,
+	mut death_speed : ResMut<DeathSpeed>,
+	mut distance_travelled : ResMut<DistanceTravelled>,
 ) {
+	// Reset counters
+	death_speed.0 = 0.;
+	distance_travelled.0 = 0.;
+	
 	// Setup timer
 	timer.0.set_duration(Duration::from_secs_f32(level.spawner.interval));
 	
@@ -174,6 +192,42 @@ fn setup_game(
 				),
 			));
 		});
+		
+		// Progress Bar
+		// -------------------------------------------------------------------------
+		
+		commands.spawn((
+			Transform::from_xyz(0., SCREEN_HEIGHT * 0.5, z::UI),
+			GlobalTransform::default(),
+			Visibility::default(),
+			ComputedVisibility::default(),
+		)).with_children(|commands| {
+			// Background
+			commands.spawn(SpriteBundle {
+				sprite: Sprite {
+					color: Color::hex("#BC9C33").unwrap(),
+					custom_size: Some(Vec2::new(SCREEN_WIDTH - 40., 25.)),
+					..default()
+				},
+				transform: Transform::from_xyz(0., -30., 0.),
+				..default()
+			});
+			
+			// Fill
+			commands.spawn((
+				ProgressBar,
+				SpriteBundle {
+					sprite: Sprite {
+						color: Color::hex("#EBCC56").unwrap(),
+						custom_size: Some(Vec2::new(SCREEN_WIDTH - 40., 25.)),
+						..default()
+					},
+					transform: Transform::from_xyz(0., -30., 1.)
+						.with_scale(Vec3::new(0., 1., 1.)),
+					..default()
+				},
+			));
+		});
 	});
 	
 	state.set(GameState::Enter);
@@ -213,13 +267,68 @@ fn animate_in (
 fn handle_anim_event (
 	mut reader: EventReader<TweenCompleted>,
 	mut state : ResMut<NextState<GameState>>,
+	mut to_state : ResMut<TransitionTo>,
 ) {
 	for event in reader.iter() {
 		match event.user_data {
-			GAME_IN_ANIM_COMPLETE => state.set(GameState::Play),
-			GAME_OVER_ANIM_COMPLETE => { /* Handled in dead_loop */ },
-			_ => {},
+			GAME_IN_ANIM_COMPLETE => { state.set(GameState::Play) }
+			GAME_OUT_ANIM_COMPLETE => { to_state.0 = Some(AppState::Menu) }
+			GAME_OVER_ANIM_COMPLETE => { /* Handled in dead_loop */ }
+			_ => {}
 		}
+	}
+}
+
+fn animate_out (
+	mut commands : Commands,
+	mut query : Query<Entity, With<PlaneRoot>>,
+) {
+	if let Ok(entity) = query.get_single_mut() {
+		let tween = Tween::new(
+			EaseFunction::CircularIn,
+			Duration::from_secs(3),
+			TransformPositionLens {
+				start: Vec3::new(SCREEN_WIDTH * -0.2, 0., z::PLANE),
+				end: Vec3::new(SCREEN_WIDTH * 0.8, 200., z::PLANE),
+			},
+		).with_completed_event(GAME_OUT_ANIM_COMPLETE);
+		
+		let scale_tween = Tween::new(
+			EaseFunction::CircularIn,
+			Duration::from_secs(3),
+			TransformScaleLens {
+				start: Vec3::new(1., 1., 1.),
+				end: Vec3::new(0., 0., 1.),
+			},
+		);
+		
+		commands.entity(entity).insert(
+			Animator::new(Tracks::new([
+				tween,
+				scale_tween,
+			]))
+		);
+	}
+}
+
+// Travel
+// -------------------------------------------------------------------------
+
+fn travel (
+	mut distance_travelled : ResMut<DistanceTravelled>,
+	time : Res<Time>,
+	level : Res<Level>,
+	mut state : ResMut<NextState<GameState>>,
+	mut bar : Query<&mut Transform, With<ProgressBar>>,
+) {
+	let mut bar = bar.single_mut();
+	distance_travelled.0 += DIST_PER_SECOND * time.delta_seconds();
+	
+	bar.scale.x = distance_travelled.0 / level.distance;
+	bar.translation.x = ((SCREEN_WIDTH - 40.) * -0.5) * (1. - bar.scale.x);
+	
+	if distance_travelled.0 >= level.distance {
+		state.set(GameState::Exit);
 	}
 }
 
