@@ -4,7 +4,7 @@ use rand::Rng;
 use rand::seq::SliceRandom;
 use crate::assets::SpriteSheet;
 use crate::physics::SATCollider;
-use crate::{AppState, GameState, Level, LevelTheme, SCREEN_WIDTH, z};
+use crate::{AppState, DIST_PER_SECOND, DistanceTravelled, GameState, Level, LevelTheme, SCREEN_WIDTH, z};
 use crate::scenes::GameRoot;
 
 const SPAWN_OFFSET     : f32 = SCREEN_WIDTH * 0.5 + 100.;
@@ -58,16 +58,18 @@ pub fn spawn_obstacle (
 	sprite_sheet : Res<SpriteSheet>,
 	root_query : Query<Entity, With<GameRoot>>,
 	time : Res<Time>,
+	distance_travelled : Res<DistanceTravelled>,
 	mut level : ResMut<Level>,
 	mut timer : ResMut<SpawnTimer>,
 	mut has_run : Local<bool>,
 ) {
+	let distance_before_end = level.distance - DIST_PER_SECOND;
 	let theme = level.theme;
 	let spawner = &mut level.spawner;
 	let root = root_query.single();
 	timer.0.tick(time.delta());
 	
-	if timer.0.just_finished() || !*has_run {
+	if (timer.0.just_finished() || !*has_run) && distance_travelled.0 < distance_before_end {
 		*has_run = true;
 		commands.entity(root).with_children(|commands| {
 			spawn(

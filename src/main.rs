@@ -34,10 +34,10 @@ const SCREEN_HEIGHT : f32 = 480.;
 
 mod z {
 	pub const BACKGROUND : f32 = 0.;
-	pub const OBSTACLE   : f32 = 1.;
-	pub const GROUND     : f32 = 2.5;
-	pub const PLANE      : f32 = 3.;
-	pub const GAME_TEXT  : f32 = 4.;
+	pub const OBSTACLE   : f32 = 2.;
+	pub const GROUND     : f32 = 4.5;
+	pub const PLANE      : f32 = 5.;
+	pub const GAME_TEXT  : f32 = 6.;
 	pub const UI         : f32 = 50.;
 	pub const TRANSITION : f32 = 100.;
 }
@@ -50,6 +50,11 @@ const GAME_OUT_ANIM_COMPLETE    : u64 = 2;
 const GAME_OVER_ANIM_COMPLETE   : u64 = 3;
 const TRANSITION_START_COMPLETE : u64 = 4;
 const TRANSITION_END_COMPLETE   : u64 = 5;
+
+// Misc
+// -------------------------------------------------------------------------
+
+const DIST_PER_SECOND : f32 = 30.;
 
 // States
 // =========================================================================
@@ -88,6 +93,9 @@ pub struct Level {
 	pub spawner  : ObstacleSpawner,
 }
 
+#[derive(Resource)]
+pub struct DistanceTravelled (pub f32);
+
 // Game
 // =========================================================================
 
@@ -97,7 +105,7 @@ fn main() {
 	app
 		.insert_resource(Level {
 			theme: LevelTheme::Grass,
-			distance: 250.,
+			distance: 1000.,
 			spawner: ObstacleSpawner {
 				speed: 150.,
 				interval: 2.,
@@ -105,6 +113,7 @@ fn main() {
 				gap_max: 200.,
 			},
 		})
+		.insert_resource(DistanceTravelled(0.))
 		.add_state::<AppState>()
 		.add_state::<GameState>()
 		.insert_resource(ClearColor(Color::hex("#D9ECF6").unwrap()))

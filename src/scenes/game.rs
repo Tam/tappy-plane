@@ -4,7 +4,7 @@ use bevy::sprite::MaterialMesh2dBundle;
 use bevy_tweening::{Animator, Delay, EaseFunction, Tracks, Tween, TweenCompleted};
 use bevy_tweening::lens::{TransformPositionLens, TransformScaleLens};
 use crate::sprite_animation::{SpriteAnimationIndices, SpriteAnimationTimer};
-use crate::{AppState, GAME_IN_ANIM_COMPLETE, GAME_OUT_ANIM_COMPLETE, GAME_OVER_ANIM_COMPLETE, GameState, Level, LevelTheme, SCREEN_HEIGHT, SCREEN_WIDTH, z};
+use crate::{AppState, DIST_PER_SECOND, DistanceTravelled, GAME_IN_ANIM_COMPLETE, GAME_OUT_ANIM_COMPLETE, GAME_OVER_ANIM_COMPLETE, GameState, Level, LevelTheme, SCREEN_HEIGHT, SCREEN_WIDTH, z};
 use crate::assets::SpriteSheet;
 use crate::obstacle::SpawnTimer;
 use crate::physics::{AABBCollider, Velocity};
@@ -18,7 +18,6 @@ impl Plugin for GamePlugin {
 		app
 			.insert_resource(GroundSpeed(300.))
 			.insert_resource(DeathSpeed(0.))
-			.insert_resource(DistanceTravelled(0.))
 			
 			.add_system(setup_game.in_schedule(OnEnter(AppState::Game)))
 			.add_system(teardown_game.in_schedule(OnExit(AppState::Game)))
@@ -36,8 +35,6 @@ impl Plugin for GamePlugin {
 	}
 }
 
-const DIST_PER_SECOND : f32 = 30.;
-
 // Resources
 // =========================================================================
 
@@ -46,9 +43,6 @@ pub struct GroundSpeed (pub f32);
 
 #[derive(Resource)]
 pub struct DeathSpeed (pub f32);
-
-#[derive(Resource)]
-pub struct DistanceTravelled (pub f32);
 
 // Components
 // =========================================================================
@@ -63,7 +57,13 @@ struct PlaneRoot;
 struct Plane;
 
 #[derive(Component)]
+struct ProgressBarRoot;
+
+#[derive(Component)]
 struct ProgressBar;
+
+#[derive(Component)]
+struct ProgressPlane;
 
 // Systems
 // =========================================================================
@@ -95,6 +95,7 @@ fn setup_game(
 	ground_speed.0 = computed_ground_speed;
 	
 	let theme = level.theme;
+	
 	commands.spawn((
 		GameRoot,
 		Transform::default(),
@@ -201,7 +202,8 @@ fn setup_game(
 		// -------------------------------------------------------------------------
 		
 		commands.spawn((
-			Transform::from_xyz(0., SCREEN_HEIGHT * 0.5, z::UI),
+			ProgressBarRoot,
+			Transform::from_xyz(0., SCREEN_HEIGHT * 0.7, z::UI),
 			GlobalTransform::default(),
 			Visibility::default(),
 			ComputedVisibility::default(),
@@ -210,10 +212,10 @@ fn setup_game(
 			commands.spawn(SpriteBundle {
 				sprite: Sprite {
 					color: Color::hex("#BC9C33").unwrap(),
-					custom_size: Some(Vec2::new(SCREEN_WIDTH - 40., 25.)),
+					custom_size: Some(Vec2::new(SCREEN_WIDTH - 70., 25.)),
 					..default()
 				},
-				transform: Transform::from_xyz(0., -30., 0.),
+				transform: Transform::from_xyz(0., -40., 0.),
 				..default()
 			});
 			
@@ -223,13 +225,30 @@ fn setup_game(
 				SpriteBundle {
 					sprite: Sprite {
 						color: Color::hex("#EBCC56").unwrap(),
-						custom_size: Some(Vec2::new(SCREEN_WIDTH - 40., 25.)),
+						custom_size: Some(Vec2::new(SCREEN_WIDTH - 80., 15.)),
 						..default()
 					},
-					transform: Transform::from_xyz(0., -30., 1.)
+					transform: Transform::from_xyz(0., -40., 1.)
 						.with_scale(Vec3::new(0., 1., 1.)),
 					..default()
 				},
+			));
+			
+			// Tiny Plane
+			commands.spawn((
+				ProgressPlane,
+				SpriteSheetBundle {
+					texture_atlas: sprite_sheet.handle.clone(),
+					sprite: sprite_sheet.get("planeBlue1"),
+					transform: Transform::from_xyz(SCREEN_WIDTH * -0.5 + 45., -38., 2.).with_scale(Vec3::splat(0.5)),
+					..default()
+				},
+				SpriteAnimationIndices::new(vec![
+					sprite_sheet.get("planeBlue1").index,
+					sprite_sheet.get("planeBlue2").index,
+					sprite_sheet.get("planeBlue3").index,
+				]),
+				SpriteAnimationTimer(Timer::from_seconds(0.04, TimerMode::Repeating)),
 			));
 		});
 	});
@@ -252,9 +271,10 @@ fn early_start (
 
 fn animate_in (
 	mut commands : Commands,
-	mut query : Query<Entity, With<PlaneRoot>>,
+	mut plane_query : Query<Entity, With<PlaneRoot>>,
+	mut progress_query : Query<Entity, (With<ProgressBarRoot>, Without<PlaneRoot>)>,
 ) {
-	if let Ok(entity) = query.get_single_mut() {
+	if let Ok(entity) = plane_query.get_single_mut() {
 		let tween = Tween::new(
 			EaseFunction::QuarticOut,
 			Duration::from_secs(2),
@@ -263,6 +283,19 @@ fn animate_in (
 				end: Vec3::new(SCREEN_WIDTH * -0.2, 0., z::PLANE),
 			},
 		).with_completed_event(GAME_IN_ANIM_COMPLETE);
+		
+		commands.entity(entity).insert(Animator::new(tween));
+	}
+	
+	if let Ok(entity) = progress_query.get_single_mut() {
+		let tween = Delay::new(Duration::from_secs_f32(0.5)).then(Tween::new(
+			EaseFunction::QuarticOut,
+			Duration::from_secs_f32(1.5),
+			TransformPositionLens {
+				start: Vec3::new(0., SCREEN_HEIGHT * 0.7, z::UI),
+				end: Vec3::new(0., SCREEN_HEIGHT * 0.5, z::UI),
+			},
+		));
 		
 		commands.entity(entity).insert(Animator::new(tween));
 	}
@@ -286,25 +319,26 @@ fn handle_anim_event (
 fn animate_out (
 	mut commands : Commands,
 	mut query : Query<Entity, With<PlaneRoot>>,
+	mut progress_query : Query<Entity, (With<ProgressBarRoot>, Without<PlaneRoot>)>,
 ) {
 	if let Ok(entity) = query.get_single_mut() {
 		let tween = Tween::new(
 			EaseFunction::CircularIn,
-			Duration::from_secs(3),
+			Duration::from_secs(2),
 			TransformPositionLens {
-				start: Vec3::new(SCREEN_WIDTH * -0.2, 0., z::PLANE),
-				end: Vec3::new(SCREEN_WIDTH * 0.8, 200., z::PLANE),
+				start: Vec3::new(SCREEN_WIDTH * -0.2, 0., z::OBSTACLE - 1.),
+				end: Vec3::new(SCREEN_WIDTH * 0.8, 200., z::OBSTACLE - 1.),
 			},
-		).with_completed_event(GAME_OUT_ANIM_COMPLETE);
+		);
 		
 		let scale_tween = Tween::new(
 			EaseFunction::CircularIn,
-			Duration::from_secs(3),
+			Duration::from_secs(2),
 			TransformScaleLens {
 				start: Vec3::new(1., 1., 1.),
 				end: Vec3::new(0., 0., 1.),
 			},
-		);
+		).with_completed_event(GAME_OUT_ANIM_COMPLETE);
 		
 		commands.entity(entity).insert(
 			Animator::new(Tracks::new([
@@ -312,6 +346,19 @@ fn animate_out (
 				scale_tween,
 			]))
 		);
+	}
+	
+	if let Ok(entity) = progress_query.get_single_mut() {
+		let tween = Tween::new(
+			EaseFunction::QuarticIn,
+			Duration::from_secs(1),
+			TransformPositionLens {
+				start: Vec3::new(0., SCREEN_HEIGHT * 0.5, z::UI),
+				end: Vec3::new(0., SCREEN_HEIGHT * 0.7, z::UI),
+			},
+		);
+		
+		commands.entity(entity).insert(Animator::new(tween));
 	}
 }
 
@@ -324,12 +371,15 @@ fn travel (
 	level : Res<Level>,
 	mut state : ResMut<NextState<GameState>>,
 	mut bar : Query<&mut Transform, With<ProgressBar>>,
+	mut plane : Query<&mut Transform, (With<ProgressPlane>, Without<ProgressBar>)>,
 ) {
 	let mut bar = bar.single_mut();
+	let mut plane = plane.single_mut();
 	distance_travelled.0 += DIST_PER_SECOND * time.delta_seconds();
 	
 	bar.scale.x = distance_travelled.0 / level.distance;
-	bar.translation.x = ((SCREEN_WIDTH - 40.) * -0.5) * (1. - bar.scale.x);
+	bar.translation.x = ((SCREEN_WIDTH - 80.) * -0.5) * (1. - bar.scale.x);
+	plane.translation.x = (SCREEN_WIDTH * -0.5 + 45.) + (SCREEN_WIDTH - 80.) * bar.scale.x;
 	
 	if distance_travelled.0 >= level.distance {
 		state.set(GameState::Exit);
