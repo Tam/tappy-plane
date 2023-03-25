@@ -63,9 +63,9 @@ fn load_sprite_sheet (
 	add("buttonSmall", 0., 1320., 136., 80.);
 	add("groundDirt", 0., 0., 808., 71.);
 	add("groundGrass", 0., 142.3, 808., 71.);
-	add("groundIce", 0., 71., 808., 71.);
-	add("groundRock", 0., 284., 808., 71.);
-	add("groundSnow", 0., 213., 808., 71.);
+	add("groundIce", 0., 71.3, 808., 71.);
+	add("groundRock", 0., 284.3, 808., 71.);
+	add("groundSnow", 0., 213.3, 808., 71.);
 	add("letterA", 412., 835.3, 61., 64. - 0.5);
 	add("letterB", 487., 1537.3, 50., 66. - 0.5);
 	add("letterC", 460., 977.3, 52., 66. - 0.5);
@@ -124,9 +124,9 @@ fn load_sprite_sheet (
 	add("rockGrass", 0., 1757., 108. - 0.3, 239.);
 	add("rockGrassDown", 264.3, 986., 108. - 0.4, 239. - 0.5);
 	add("rockIce", 216., 1639., 108. - 0.3, 239.);
-	add("rockIceDown", 222., 1250., 108. - 0.4, 239.);
+	add("rockIceDown", 222., 1250., 108. - 0.4, 239. - 0.5);
 	add("rockSnow", 324., 1728., 108. - 0.3, 239.);
-	add("rockSnowDown", 108., 1757., 108. - 0.4, 239.);
+	add("rockSnowDown", 108., 1757., 108. - 0.4, 239. - 0.5);
 	add("starBronze", 170., 1996., 39., 37.);
 	add("starGold", 369., 1444., 39., 37.);
 	add("starSilver", 330., 1444., 39., 37.);

@@ -4,7 +4,7 @@ use bevy::sprite::MaterialMesh2dBundle;
 use bevy_tweening::{Animator, Delay, EaseFunction, Tracks, Tween, TweenCompleted};
 use bevy_tweening::lens::{TransformPositionLens, TransformScaleLens};
 use crate::sprite_animation::{SpriteAnimationIndices, SpriteAnimationTimer};
-use crate::{AppState, DIST_PER_SECOND, DistanceTravelled, GAME_IN_ANIM_COMPLETE, GAME_OUT_ANIM_COMPLETE, GAME_OVER_ANIM_COMPLETE, GameState, Level, LevelTheme, SCREEN_HEIGHT, SCREEN_WIDTH, z};
+use crate::{AppState, BASE_LEVEL, DIST_PER_SECOND, DistanceTravelled, GAME_IN_ANIM_COMPLETE, GAME_OUT_ANIM_COMPLETE, GAME_OVER_ANIM_COMPLETE, GameState, Level, LevelTheme, SCREEN_HEIGHT, SCREEN_WIDTH, z};
 use crate::assets::SpriteSheet;
 use crate::obstacle::SpawnTimer;
 use crate::physics::{AABBCollider, Velocity};
@@ -64,6 +64,9 @@ struct ProgressBar;
 
 #[derive(Component)]
 struct ProgressPlane;
+
+#[derive(Component)]
+struct LevelIndex;
 
 // Systems
 // =========================================================================
@@ -251,6 +254,36 @@ fn setup_game(
 				SpriteAnimationTimer(Timer::from_seconds(0.04, TimerMode::Repeating)),
 			));
 		});
+		
+		// Level Index
+		// -------------------------------------------------------------------------
+		
+		commands.spawn((
+			LevelIndex,
+			SpatialBundle::from_transform(Transform::from_xyz(0., 0., z::UI)),
+		)).with_children(|commands| {
+			let index = level.index.to_string();
+			let mut i = index.len() / 2;
+			for c in index.chars() {
+				let mut name = String::from("number");
+				name.push(c);
+				
+				commands.spawn((
+					SpriteSheetBundle {
+						texture_atlas: sprite_sheet.handle.clone(),
+						sprite: sprite_sheet.get(name.as_str()),
+						transform: Transform::from_xyz(
+							45. * (i as f32) - ((45. * (index.len() as f32)) * 0.25),
+							30.,
+							0.
+						),
+						..default()
+					},
+				));
+				
+				i += 1;
+			}
+		});
 	});
 	
 	state.set(GameState::Enter);
@@ -273,6 +306,7 @@ fn animate_in (
 	mut commands : Commands,
 	mut plane_query : Query<Entity, With<PlaneRoot>>,
 	mut progress_query : Query<Entity, (With<ProgressBarRoot>, Without<PlaneRoot>)>,
+	mut level_index_query : Query<Entity, (With<LevelIndex>, Without<PlaneRoot>, Without<ProgressBarRoot>)>,
 ) {
 	if let Ok(entity) = plane_query.get_single_mut() {
 		let tween = Tween::new(
@@ -299,17 +333,38 @@ fn animate_in (
 		
 		commands.entity(entity).insert(Animator::new(tween));
 	}
+	
+	if let Ok(entity) = level_index_query.get_single_mut() {
+		let tween = Tween::new(
+			EaseFunction::QuadraticInOut,
+			Duration::from_secs(3),
+			TransformPositionLens {
+				start: Vec3::new(0., SCREEN_HEIGHT * 0.7, z::UI),
+				end: Vec3::new(0., SCREEN_HEIGHT * -0.7, z::UI),
+			},
+		);
+		
+		commands.entity(entity).insert(Animator::new(tween));
+	}
 }
 
 fn handle_anim_event (
 	mut reader: EventReader<TweenCompleted>,
 	mut state : ResMut<NextState<GameState>>,
 	mut to_state : ResMut<TransitionTo>,
+	mut level : ResMut<Level>,
 ) {
 	for event in reader.iter() {
 		match event.user_data {
 			GAME_IN_ANIM_COMPLETE => { state.set(GameState::Play) }
-			GAME_OUT_ANIM_COMPLETE => { to_state.0 = Some(AppState::Menu) }
+			GAME_OUT_ANIM_COMPLETE => {
+				to_state.0 = Some(AppState::Menu);
+				level.index += 1;
+				level.theme = rand::random();
+				level.distance += 100.;
+				level.spawner.speed += 5.;
+				level.spawner.interval -= 0.1;
+			}
 			GAME_OVER_ANIM_COMPLETE => { /* Handled in dead_loop */ }
 			_ => {}
 		}
@@ -470,6 +525,7 @@ fn dead_loop (
 	mut can_restart : Local<bool>,
 	mut reader : EventReader<TweenCompleted>,
 	mut to_state : ResMut<TransitionTo>,
+	mut level : ResMut<Level>,
 ) {
 	if let Ok(mut transform) = query.get_single_mut() {
 		transform.translation.x -= death_speed.0 * time.delta_seconds();
@@ -483,5 +539,6 @@ fn dead_loop (
 	
 	if *can_restart && (mouse.just_pressed(MouseButton::Left) || touch.any_just_pressed()) {
 		to_state.0 = Some(AppState::Menu);
+		*level = BASE_LEVEL;
 	}
 }

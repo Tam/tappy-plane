@@ -10,6 +10,9 @@ mod transitions;
 
 use bevy::prelude::*;
 use bevy_tweening::TweeningPlugin;
+use rand::distributions::Standard;
+use rand::prelude::Distribution;
+use rand::Rng;
 use crate::assets::AssetsPlugin;
 #[cfg(feature = "debug")]
 use crate::debug::DebugPlugin;
@@ -86,12 +89,35 @@ pub enum LevelTheme {
 	Ice,
 }
 
+impl Distribution<LevelTheme> for Standard {
+	fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> LevelTheme {
+		match rng.gen_range(0..=2) {
+			0 => LevelTheme::Grass,
+			1 => LevelTheme::Snow,
+			_ => LevelTheme::Ice,
+		}
+	}
+}
+
 #[derive(Resource)]
 pub struct Level {
+	pub index    : usize,
 	pub theme    : LevelTheme,
 	pub distance : f32, // Distance the player needs to travel to "complete" the level
 	pub spawner  : ObstacleSpawner,
 }
+
+pub const BASE_LEVEL : Level = Level {
+	index: 1,
+	theme: LevelTheme::Grass,
+	distance: 1000.,
+	spawner: ObstacleSpawner {
+		speed: 150.,
+		interval: 2.,
+		gap_min: 150.,
+		gap_max: 200.,
+	},
+};
 
 #[derive(Resource)]
 pub struct DistanceTravelled (pub f32);
@@ -103,16 +129,7 @@ fn main() {
 	let mut app = App::new();
 	
 	app
-		.insert_resource(Level {
-			theme: LevelTheme::Grass,
-			distance: 1000.,
-			spawner: ObstacleSpawner {
-				speed: 150.,
-				interval: 2.,
-				gap_min: 150.,
-				gap_max: 200.,
-			},
-		})
+		.insert_resource(BASE_LEVEL)
 		.insert_resource(DistanceTravelled(0.))
 		.add_state::<AppState>()
 		.add_state::<GameState>()
